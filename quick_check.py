@@ -23,8 +23,8 @@ import requests
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FEATURES_FILE = os.path.join(SCRIPT_DIR, "scs_features.json")
 
-# Spratly Islands only (7-12°N, 109-116°E)
-SCS_LAMIN, SCS_LOMIN, SCS_LAMAX, SCS_LOMAX = 7.0, 109.0, 12.0, 116.0
+# Spratly + Paracel Islands (combined bbox)
+SCS_LAMIN, SCS_LOMIN, SCS_LAMAX, SCS_LOMAX = 7.0, 109.0, 17.0, 116.0
 
 API_URL = "https://opensky-network.org/api/states/all"
 

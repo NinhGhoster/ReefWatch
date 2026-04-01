@@ -19,7 +19,11 @@ from datetime import datetime, timezone
 import requests
 
 # ── Config ──────────────────────────────────────────────────────────────
-LAMIN, LOMIN, LAMAX, LOMAX = 7.0, 109.0, 12.0, 116.0
+# Target zones: Spratly + Paracel Islands
+ZONES = [
+    {"name": "spratly", "lamin": 7.0, "lomin": 109.0, "lamax": 12.0, "lomax": 116.0},
+    {"name": "paracel", "lamin": 15.7, "lomin": 111.0, "lamax": 17.0, "lomax": 113.0},
+]
 INTERVAL = 900  # 15 minutes
 API_URL = "https://opensky-network.org/api/states/all"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,9 +35,9 @@ MIN_GAP = 0.3  # seconds between requests (well under the limit)
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 
-def query_opensky():
+def query_opensky(zone):
     """Return list of aircraft dicts inside the bounding box."""
-    params = {"lamin": LAMIN, "lomin": LOMIN, "lamax": LAMAX, "lomax": LOMAX}
+    params = {"lamin": zone["lamin"], "lomin": zone["lomin"], "lamax": zone["lamax"], "lomax": zone["lomax"]}
     try:
         resp = requests.get(API_URL, params=params, timeout=30)
         if resp.status_code in (403, 429):
@@ -73,17 +77,22 @@ def append_detections(detections):
 
 def sweep_loop():
     """Main loop — query every INTERVAL seconds."""
-    print(f"[sweep] Spratly monitor started — interval {INTERVAL}s")
+    zone_names = "+".join(z["name"] for z in ZONES)
+    print(f"[sweep] {zone_names} monitor started — interval {INTERVAL}s")
     print(f"[sweep] Log → {LOG_FILE}")
     while True:
         try:
             t0 = time.monotonic()
-            results = query_opensky()
-            append_detections(results)
+            all_results = []
+            for zone in ZONES:
+                results = query_opensky(zone)
+                all_results.extend(results)
+                time.sleep(1)  # rate limit between zones
+            append_detections(all_results)
             ts_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-            if results:
-                cs = sorted({r["callsign"] or "?" for r in results})
-                print(f"[{ts_str}Z] {len(results)} aircraft — callsigns: {', '.join(cs)}")
+            if all_results:
+                cs = sorted({r["callsign"] or "?" for r in all_results})
+                print(f"[{ts_str}Z] {len(all_results)} aircraft — callsigns: {', '.join(cs)}")
             else:
                 print(f"[{ts_str}Z] No aircraft.")
         except requests.RequestException as e:

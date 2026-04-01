@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Spratly Islands airspace monitor — single check.
-Queries OpenSky Network API once for aircraft in the Spratly bounding box
-and prints results to stdout.
+Spratly + Paracel Islands airspace monitor — single check.
+Queries OpenSky Network API for aircraft in both zones.
 
 Usage:  python3 opensky_once.py
 """
@@ -11,11 +10,14 @@ import json
 import time
 import requests
 
-LAMIN, LOMIN, LAMAX, LOMAX = 7.0, 109.0, 12.0, 116.0
+ZONES = [
+    {"name": "spratly", "lamin": 7.0, "lomin": 109.0, "lamax": 12.0, "lomax": 116.0},
+    {"name": "paracel", "lamin": 15.7, "lomin": 111.0, "lamax": 17.0, "lomax": 113.0},
+]
 API_URL = "https://opensky-network.org/api/states/all"
 
-def query_opensky():
-    params = {"lamin": LAMIN, "lomin": LOMIN, "lamax": LAMAX, "lomax": LOMAX}
+def query_opensky(zone):
+    params = {"lamin": zone["lamin"], "lomin": zone["lomin"], "lamax": zone["lamax"], "lomax": zone["lomax"]}
     try:
         resp = requests.get(API_URL, params=params, timeout=30)
         if resp.status_code == 403:
@@ -46,11 +48,22 @@ def query_opensky():
     return results
 
 if __name__ == "__main__":
-    print(f"Checking OpenSky — bounding box lat={LAMIN}-{LAMAX}, lon={LOMIN}-{LOMAX} ...")
-    results = query_opensky()
-    if not results:
-        print("No aircraft detected.")
-    else:
-        print(f"Aircraft detected: {len(results)}\n")
+    zone_names = "+".join(z["name"] for z in ZONES)
+    print(f"Checking OpenSky — {zone_names} zones...")
+    all_results = []
+    for zone in ZONES:
+        print(f"\n  [{zone['name']}] {zone['lamin']}-{zone['lamax']}°N, {zone['lomin']}-{zone['lomax']}°E")
+        results = query_opensky(zone)
         for r in results:
+            r["zone"] = zone["name"]
+        all_results.extend(results)
+        if results:
+            print(f"    → {len(results)} aircraft")
+        else:
+            print(f"    → No aircraft")
+        time.sleep(1)
+
+    print(f"\nTotal: {len(all_results)} aircraft")
+    if all_results:
+        for r in all_results:
             print(json.dumps(r, ensure_ascii=False))

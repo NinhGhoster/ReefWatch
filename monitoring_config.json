@@ -1,15 +1,19 @@
 {
   "_updated": "2026-04-01T15:40:00Z",
-  "_focus": "Spratly Islands only (7-12°N, 109-116°E)",
+  "_focus": "Spratly + Paracel Islands (7-12°N, 109-116°E + 15.7-17°N, 111-113°E)",
   "monitoring_bbox": {
     "lamin": 7.0,
     "lomin": 109.0,
-    "lamax": 12.0,
+    "lamax": 17.0,
     "lomax": 116.0,
-    "description": "Spratly Islands exclusive monitoring zone"
+    "description": "Spratly + Paracel Islands combined monitoring zone"
   },
-  "active_groups": ["spratly_islands"],
-  "disabled_groups": ["paracel_islands", "pratas_islands", "scarborough_shoal"],
+  "zones": {
+    "spratly": {"lamin": 7.0, "lomin": 109.0, "lamax": 12.0, "lomax": 116.0},
+    "paracel": {"lamin": 15.7, "lomin": 111.0, "lamax": 17.0, "lomax": 113.0}
+  },
+  "active_groups": ["spratly_islands", "paracel_islands"],
+  "disabled_groups": ["pratas_islands", "scarborough_shoal"],
   "monitoring": {
     "aircraft": {
       "method": ["opensky_state_vectors"],

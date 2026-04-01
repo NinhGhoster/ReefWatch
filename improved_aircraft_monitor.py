@@ -31,9 +31,12 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FEATURES_FILE = os.path.join(SCRIPT_DIR, "scs_features.json")
 LOG_FILE = os.path.join(SCRIPT_DIR, "improved_aircraft_log.jsonl")
 
-# Spratly Islands only — Ninh's target area (7-12°N, 109-116°E)
-SCS_LAMIN, SCS_LOMIN, SCS_LAMAX, SCS_LOMAX = 7.0, 109.0, 12.0, 116.0
+# Spratly + Paracel Islands — Ninh's target areas
+# Spratly: 7-12°N, 109-116°E | Paracel: 15.7-17°N, 111-113°E
+# Combined wide bbox to catch both
+SCS_LAMIN, SCS_LOMIN, SCS_LAMAX, SCS_LOMAX = 7.0, 109.0, 17.0, 116.0
 SPRATLY_LAMIN, SPRATLY_LOMIN, SPRATLY_LAMAX, SPRATLY_LOMAX = 7.0, 109.0, 12.0, 116.0
+PARACEL_LAMIN, PARACEL_LOMIN, PARACEL_LAMAX, PARACEL_LOMAX = 15.7, 111.0, 17.0, 113.0
 
 RATE_LIMIT = 1.0  # seconds between API calls
 
@@ -209,13 +212,13 @@ def run_full_scan(features, tracks=False):
     print(f"        → {len(wide)} aircraft")
     all_aircraft.extend(wide)
 
-    # Source 2: ADSB.fi points within Spratly bbox only
-    print(f"  [2/3] ADSB.fi scan (Spratly area, 300nm radius)...")
+    # Spratly + Paracel area scan points
     adsbfi_points = [
         (10.0, 112.0, "Spratly core"),
         (10.0, 114.0, "Central Spratly"),
         (8.0, 110.0, "South Spratly"),
         (12.0, 113.0, "North Spratly"),
+        (16.5, 112.0, "Paracel Islands"),
     ]
     adsbfi_count = 0
     for lat, lon, label in adsbfi_points:
