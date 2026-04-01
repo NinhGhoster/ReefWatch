@@ -11,6 +11,13 @@ historical_progress.json
 imagery/
 imagery_history/
 
+*.tif
+*.tiff
+
+# Sentinel-2 logs
+sentinel2_*.jsonl
+sentinel2_fetch_log.jsonl
+
 # Generated images
 *.png
 *.jpg
