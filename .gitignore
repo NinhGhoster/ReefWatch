@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.env
+*.log
+imagery_history/*.png
+historical_progress.json
+improved_aircraft_log.jsonl
+improved_ship_log.jsonl
+aircraft_detections.jsonl
+ships_log.jsonl
+scs_monitor_log.jsonl
+detections.jsonl
+imagery_changes.jsonl
+imagery_log.jsonl
+historical_imagery_log.jsonl
+imagery/latest_fetch.json
+fiery_cross_reef.png

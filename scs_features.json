@@ -1,0 +1,807 @@
+{
+  "_meta": {
+    "description": "South China Sea monitored features database",
+    "last_updated": "2026-04-01",
+    "sources": "OurAirports, AMTI/CSIS, Wikipedia, Open-source OSINT",
+    "coverage": "Paracel Islands, Spratly Islands, Pratas Islands, Scarborough Shoal",
+    "total_features": 79
+  },
+  "island_groups": {
+    "paracel_islands": {
+      "name": "Paracel Islands (Xisha / Hoang Sa)",
+      "features": {
+        "woody_island": {
+          "name": "Woody Island (Yongxing / Phú Lâm)",
+          "lat": 16.8328,
+          "lon": 112.344,
+          "country": "China",
+          "airport": {
+            "icao": "ZJYX",
+            "iata": "XYI",
+            "runway_m": 2700,
+            "surface": "paved"
+          },
+          "helipad": true,
+          "port": true,
+          "radar": true,
+          "sam": true,
+          "notes": "Largest Chinese garrison in Paracels. Full military base with radar, SAM, port, and airport."
+        },
+        "rocky_island": {
+          "name": "Rocky Island (Shidao)",
+          "lat": 16.8,
+          "lon": 112.3,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": "Connected to Woody Island by causeway."
+        },
+        "duncan_island": {
+          "name": "Duncan Island (Chenhang)",
+          "lat": 16.4542,
+          "lon": 111.707,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": ""
+        },
+        "robert_island": {
+          "name": "Robert Island (Dongdao)",
+          "lat": 16.77,
+          "lon": 112.18,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": ""
+        },
+        "lincoln_island": {
+          "name": "Lincoln Island (Zhaoshu)",
+          "lat": 16.67,
+          "lon": 112.72,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": ""
+        },
+        "triton_island": {
+          "name": "Triton Island (Zhongjian)",
+          "lat": 15.783,
+          "lon": 111.199,
+          "country": "China",
+          "helipad": true,
+          "port": true,
+          "notes": "Air base + heliport (OurAirports XP-0002, XP-0001). Small dock present.",
+          "airport": {
+            "icao": null,
+            "runway_m": null,
+            "surface": "unknown",
+            "notes": "Air base confirmed by OurAirports (XP-0002). Runway details unconfirmed."
+          }
+        },
+        "pattle_island": {
+          "name": "Pattle Island (Shanhu)",
+          "lat": 16.5351,
+          "lon": 111.609,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": ""
+        },
+        "money_island": {
+          "name": "Money Island (Jinyin)",
+          "lat": 16.4475,
+          "lon": 111.507,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": ""
+        },
+        "tree_island": {
+          "name": "Tree Island (Zhaoshudao)",
+          "lat": 16.9782,
+          "lon": 112.266,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": ""
+        },
+        "west_sand": {
+          "name": "West Sand",
+          "lat": 16.97,
+          "lon": 112.2,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": ""
+        },
+        "north_island": {
+          "name": "North Island",
+          "lat": 16.9606,
+          "lon": 112.315,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": ""
+        },
+        "antelope_reef": {
+          "name": "Antelope Reef (Lingyang Jiao)",
+          "lat": 16.4464,
+          "lon": 111.607,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": "China-operated heliport in disputed Paracels. OurAirports ID: XP-0005"
+        },
+        "bombay_reef": {
+          "name": "Bombay Reef (Langhua Jiao)",
+          "lat": 16.02,
+          "lon": 112.32,
+          "country": "China",
+          "helipad": false,
+          "port": false,
+          "observation_post": true,
+          "notes": "AMTI tracked. Submerged reef with lighthouse. Potential future reclamation site."
+        },
+        "drummond_island": {
+          "name": "Drummond Island (Jinqing Dao)",
+          "lat": 16.63,
+          "lon": 111.75,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Small island with Chinese garrison."
+        },
+        "middle_island": {
+          "name": "Middle Island (Zhong Dao)",
+          "lat": 16.95,
+          "lon": 112.25,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Part of Amphitrite Group."
+        },
+        "north_reef": {
+          "name": "North Reef (Bei Jiao)",
+          "lat": 17.07,
+          "lon": 111.58,
+          "country": "China",
+          "helipad": false,
+          "port": false,
+          "observation_post": true,
+          "notes": "AMTI tracked. Submerged reef with lighthouse."
+        },
+        "observation_bank": {
+          "name": "Observation Bank (Yin Yu)",
+          "lat": 16.55,
+          "lon": 111.68,
+          "country": "China",
+          "helipad": false,
+          "port": false,
+          "observation_post": true,
+          "notes": "AMTI tracked. Sand cay with small structures."
+        },
+        "quanfu_island": {
+          "name": "Quanfu Island (Quanfu Dao)",
+          "lat": 16.55,
+          "lon": 111.7,
+          "country": "China",
+          "helipad": false,
+          "port": false,
+          "notes": "AMTI tracked. Small uninhabited island."
+        },
+        "south_island": {
+          "name": "South Island (Nan Dao)",
+          "lat": 16.95,
+          "lon": 112.23,
+          "country": "China",
+          "helipad": false,
+          "port": false,
+          "notes": "AMTI tracked. Part of Qilian Yu group."
+        },
+        "south_sand": {
+          "name": "South Sand (Nan Shazhou)",
+          "lat": 16.95,
+          "lon": 112.24,
+          "country": "China",
+          "helipad": false,
+          "port": false,
+          "notes": "AMTI tracked. Sand bar in Amphitrite Group."
+        },
+        "yagong_island": {
+          "name": "Yagong Island (Yagong Dao)",
+          "lat": 16.58,
+          "lon": 111.73,
+          "country": "China",
+          "helipad": false,
+          "port": false,
+          "notes": "AMTI tracked. Small fishing community island."
+        }
+      }
+    },
+    "spratly_islands": {
+      "name": "Spratly Islands (Nansha / Truong Sa)",
+      "features": {
+        "fiery_cross_reef": {
+          "name": "Fiery Cross Reef (Yongshu Jiao / Đá Chữ Thập)",
+          "lat": 9.53,
+          "lon": 112.88,
+          "country": "China",
+          "airport": {
+            "icao": "AG4553",
+            "runway_m": 3300,
+            "surface": "paved"
+          },
+          "helipad": true,
+          "port": true,
+          "radar": true,
+          "sam": true,
+          "notes": "Largest Chinese artificial island. 3300m runway, radar, SAM, harbor, 10 buildings."
+        },
+        "subi_reef": {
+          "name": "Subi Reef (Zhubi Jiao / Đá Subi)",
+          "lat": 10.88,
+          "lon": 114.07,
+          "country": "China",
+          "airport": {
+            "icao": null,
+            "runway_m": 3000,
+            "surface": "paved"
+          },
+          "helipad": true,
+          "port": true,
+          "sam": true,
+          "notes": "Large reclaimed island. 3000m runway, SAM batteries confirmed."
+        },
+        "mischief_reef": {
+          "name": "Mischief Reef (Meiji Jiao / Đá Vành Khăn)",
+          "lat": 9.921,
+          "lon": 115.506,
+          "country": "China",
+          "airport": {
+            "icao": null,
+            "runway_m": 2700,
+            "surface": "paved"
+          },
+          "helipad": true,
+          "port": true,
+          "sam": true,
+          "notes": "Major reclaimed base. 2700m runway, SAM, large harbor. Within Philippines EEZ."
+        },
+        "cuarteron_reef": {
+          "name": "Cuarteron Reef (Huayang Jiao / Đá Châu Viên)",
+          "lat": 8.8643,
+          "lon": 112.832,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "radar": true,
+          "notes": "Large radar installation. Key surveillance node."
+        },
+        "gaven_reefs": {
+          "name": "Gaven Reefs (Nanxun Jiao / Đá Ga Ven)",
+          "lat": 10.2054,
+          "lon": 114.226,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": "Reclaimed island with helipad and structures."
+        },
+        "johnson_south_reef": {
+          "name": "Johnson South Reef (Chigua Jiao / Đá Gạc Ma)",
+          "lat": 9.7162,
+          "lon": 114.287,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": "Site of 1988 skirmish. Reclaimed island with helipad."
+        },
+        "hughes_reef": {
+          "name": "Hughes Reef (Dongmen Jiao / Đá Tư Nghĩa)",
+          "lat": 9.9083,
+          "lon": 114.498,
+          "country": "China",
+          "helipad": true,
+          "port": false,
+          "notes": "Small reclaimed feature with helipad."
+        },
+        "taiping_island": {
+          "name": "Taiping Island (Itu Aba / Đảo Ba Bình)",
+          "lat": 10.38,
+          "lon": 114.36,
+          "country": "Taiwan",
+          "airport": {
+            "icao": "RCSP",
+            "runway_m": 1200,
+            "surface": "paved"
+          },
+          "helipad": true,
+          "port": true,
+          "notes": "Largest natural island in Spratlys. Taiwan-controlled. 1200m runway, port, hospital."
+        },
+        "thitu_island": {
+          "name": "Thitu Island (Pag-asa / Đảo Thị Tứ)",
+          "lat": 11.05,
+          "lon": 114.28,
+          "country": "Philippines",
+          "airport": {
+            "icao": "RPPN",
+            "runway_m": 1300,
+            "surface": "paved"
+          },
+          "helipad": true,
+          "port": true,
+          "notes": "Philippines-administered. 1300m runway under repair. Civilian settlement present."
+        },
+        "spratly_island": {
+          "name": "Spratly Island (Trường Sa / Đảo Trường Sa)",
+          "lat": 8.64,
+          "lon": 111.92,
+          "country": "Vietnam",
+          "airport": {
+            "icao": null,
+            "runway_m": 1200,
+            "surface": "paved"
+          },
+          "helipad": true,
+          "port": true,
+          "notes": "Vietnam-administered. 1200m runway, port, lighthouse."
+        },
+        "swallow_reef": {
+          "name": "Swallow Reef (Layang-Layang / Terumbu Layang)",
+          "lat": 7.37,
+          "lon": 113.85,
+          "country": "Malaysia",
+          "airport": {
+            "icao": "LAC",
+            "runway_m": 1367,
+            "surface": "paved"
+          },
+          "helipad": true,
+          "port": true,
+          "notes": "Malaysia-controlled. Naval base with dive resort. 1367m runway."
+        },
+        "namyit_island": {
+          "name": "Namyit Island (Nam Yết / Hongxiu Dao)",
+          "lat": 10.17,
+          "lon": 114.37,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "Vietnam-controlled. Helipad present."
+        },
+        "sin_cowe_island": {
+          "name": "Sin Cowe Island (Sinh Tồn / Jinghong Dao)",
+          "lat": 9.88,
+          "lon": 114.33,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "Vietnam-controlled. Helipad present."
+        },
+        "song_tu_tay": {
+          "name": "Song Tu Tay (Southwest Cay / Đảo Song Tử Tây)",
+          "lat": 11.42,
+          "lon": 114.33,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "Vietnam-controlled. Northernmost Spratly island. Helipad present."
+        },
+        "amboyna_cay": {
+          "name": "Amboyna Cay (Trường Sa Đông / An Boon)",
+          "lat": 7.92,
+          "lon": 112.92,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "Vietnam-controlled. Small platform with helipad."
+        },
+        "commodore_reef": {
+          "name": "Commodore Reef (Terumbu Laksamana / Erica)",
+          "lat": 8.0,
+          "lon": 114.17,
+          "country": "Malaysia",
+          "helipad": true,
+          "port": false,
+          "notes": "Malaysia-controlled. Helipad present."
+        },
+        "ardasier_reef": {
+          "name": "Ardasier Reef (Terumbu Ubi)",
+          "lat": 7.62,
+          "lon": 113.97,
+          "country": "Malaysia",
+          "helipad": true,
+          "port": false,
+          "notes": "Malaysia-controlled. Helipad present."
+        },
+        "dallas_reef": {
+          "name": "Dallas Reef (Terumbu Semarang)",
+          "lat": 7.62,
+          "lon": 113.85,
+          "country": "Malaysia",
+          "helipad": true,
+          "port": false,
+          "notes": "Malaysia-controlled. Helipad present."
+        },
+        "investigator_shoal": {
+          "name": "Investigator Shoal (Terumbu Peninjau)",
+          "lat": 8.08,
+          "lon": 114.67,
+          "country": "Malaysia",
+          "helipad": true,
+          "port": false,
+          "notes": "Malaysia-controlled. Helipad present."
+        },
+        "station_mike": {
+          "name": "Station Mike Helipad",
+          "lat": 7.967,
+          "lon": 113.916,
+          "country": "Malaysia",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports MY-0002"
+        },
+        "station_sierra": {
+          "name": "Station Sierra Helipad",
+          "lat": 8.103,
+          "lon": 114.138,
+          "country": "Malaysia",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports MY-0043"
+        },
+        "lawak_island": {
+          "name": "Lawak Island (Nanshan) Helipad",
+          "lat": 10.733,
+          "lon": 115.802,
+          "country": "Philippines",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports PH-0481"
+        },
+        "parola_island": {
+          "name": "Parola Island (Northeast Cay) Helipad",
+          "lat": 11.453,
+          "lon": 114.356,
+          "country": "Philippines",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports PH-0510"
+        },
+        "kota_island": {
+          "name": "Kota Island (Loaita) Heliport",
+          "lat": 10.668,
+          "lon": 114.424,
+          "country": "Philippines",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports PH-0737"
+        },
+        "viper_north_shoal": {
+          "name": "Maya-maya (Viper North Shoal) Helipad",
+          "lat": 8.358,
+          "lon": 115.238,
+          "country": "Philippines",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports PH-0511"
+        },
+        "discovery_great_reef": {
+          "name": "Discovery Great Reef (Đá Lớn) Helipad",
+          "lat": 10.023,
+          "lon": 113.854,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports VN-0008"
+        },
+        "pearson_reef_a": {
+          "name": "Pearson Reef A (Đảo Phan Vinh) Helipad",
+          "lat": 8.975,
+          "lon": 113.708,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports VN-0024"
+        },
+        "pearson_reef_b": {
+          "name": "Pearson Reef B (Đảo Phan Vinh) Helipad",
+          "lat": 8.959,
+          "lon": 113.653,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports VN-0009"
+        },
+        "central_london_reef": {
+          "name": "Central London Reef (Trường Sa Đông) Helipad",
+          "lat": 8.931,
+          "lon": 112.353,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports VN-0022"
+        },
+        "sand_cay": {
+          "name": "Sand Cay (Đảo Sơn Ca) Helipad",
+          "lat": 10.374,
+          "lon": 114.481,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports VN-0025"
+        },
+        "orleana_shoal": {
+          "name": "Orleana Shoal (Bãi Vũng Mây 1) Helipad",
+          "lat": 7.703,
+          "lon": 111.752,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports VN-0051"
+        },
+        "kingston_shoal": {
+          "name": "Kingston Shoal (Bãi Vũng Mây 2) Helipad",
+          "lat": 7.535,
+          "lon": 111.547,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports VN-0052"
+        },
+        "bombay_castle_shoal": {
+          "name": "Bombay Castle Shoal (Bãi Vũng Mây 3) Helipad",
+          "lat": 7.875,
+          "lon": 111.745,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "OurAirports VN-0053"
+        },
+        "alison_reef": {
+          "name": "Alison Reef (Bãi Tốc Tan)",
+          "lat": 9.83,
+          "lon": 114.28,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled."
+        },
+        "barque_canada_reef": {
+          "name": "Barque Canada Reef (Bãi Thuyền Chài)",
+          "lat": 8.1,
+          "lon": 113.18,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled. Large reef."
+        },
+        "collins_reef": {
+          "name": "Collins Reef (Đá Cô Lin)",
+          "lat": 9.77,
+          "lon": 114.22,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled. Site of 1988 skirmish."
+        },
+        "cornwallis_south_reef": {
+          "name": "Cornwallis South Reef (Đá Núi Le)",
+          "lat": 8.73,
+          "lon": 114.17,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled."
+        },
+        "east_reef": {
+          "name": "East Reef (Đá Đông)",
+          "lat": 8.83,
+          "lon": 112.62,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled."
+        },
+        "grierson_reef": {
+          "name": "Grierson Reef (Đảo Sinh Tồn Đông)",
+          "lat": 9.9,
+          "lon": 114.56,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled. Same as Sin Cowe East Island."
+        },
+        "ladd_reef": {
+          "name": "Ladd Reef (Đá Lát)",
+          "lat": 8.7,
+          "lon": 111.7,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled. Platform on reef."
+        },
+        "lansdowne_reef": {
+          "name": "Lansdowne Reef (Đá Len Đao)",
+          "lat": 10.25,
+          "lon": 114.38,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled."
+        },
+        "petley_reef": {
+          "name": "Petley Reef (Đá Núi Thị)",
+          "lat": 10.42,
+          "lon": 114.52,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled."
+        },
+        "south_reef": {
+          "name": "South Reef (Đá Nam)",
+          "lat": 11.4,
+          "lon": 114.33,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled."
+        },
+        "west_reef": {
+          "name": "West Reef (Đá Tây)",
+          "lat": 8.83,
+          "lon": 112.2,
+          "country": "Vietnam",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Vietnam-controlled. Platform present."
+        },
+        "dk1_alexandra_bank": {
+          "name": "DK1 Platform - Alexandra Bank",
+          "lat": 11.4,
+          "lon": 112.6,
+          "country": "Vietnam",
+          "helipad": false,
+          "port": false,
+          "notes": "Vietnam DK1 offshore platform. Oil rig-style structure."
+        },
+        "dk1_grainger_bank": {
+          "name": "DK1 Platform - Grainger Bank",
+          "lat": 10.33,
+          "lon": 112.83,
+          "country": "Vietnam",
+          "helipad": false,
+          "port": false,
+          "notes": "Vietnam DK1 offshore platform."
+        },
+        "dk1_prince_consort_bank": {
+          "name": "DK1 Platform - Prince Consort Bank",
+          "lat": 8.95,
+          "lon": 112.2,
+          "country": "Vietnam",
+          "helipad": false,
+          "port": false,
+          "notes": "Vietnam DK1 offshore platform."
+        },
+        "dk1_prince_of_wales_bank": {
+          "name": "DK1 Platform - Prince of Wales Bank",
+          "lat": 8.95,
+          "lon": 112.83,
+          "country": "Vietnam",
+          "helipad": false,
+          "port": false,
+          "notes": "Vietnam DK1 offshore platform."
+        },
+        "dk1_rifleman_bank": {
+          "name": "DK1 Platform - Rifleman Bank",
+          "lat": 8.1,
+          "lon": 111.83,
+          "country": "Vietnam",
+          "helipad": false,
+          "port": false,
+          "notes": "Vietnam DK1 offshore platform."
+        },
+        "dk1_vanguard_bank": {
+          "name": "DK1 Platform - Vanguard Bank",
+          "lat": 7.33,
+          "lon": 109.67,
+          "country": "Vietnam",
+          "helipad": false,
+          "port": false,
+          "notes": "Vietnam DK1 offshore platform. Westernmost."
+        },
+        "flat_island": {
+          "name": "Flat Island (Patag Island)",
+          "lat": 10.83,
+          "lon": 115.83,
+          "country": "Philippines",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Philippines-controlled."
+        },
+        "loaita_cay": {
+          "name": "Loaita Cay (Panata Island)",
+          "lat": 10.67,
+          "lon": 114.37,
+          "country": "Philippines",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Philippines-controlled."
+        },
+        "second_thomas_shoal": {
+          "name": "Second Thomas Shoal (Ayungin)",
+          "lat": 9.75,
+          "lon": 115.83,
+          "country": "Philippines",
+          "helipad": false,
+          "port": false,
+          "observation_post": true,
+          "notes": "AMTI tracked. BRP Sierra Madre grounded here. Highly contested. Philippines maintains presence."
+        },
+        "west_york_island": {
+          "name": "West York Island (Likas Island)",
+          "lat": 11.03,
+          "lon": 115.02,
+          "country": "Philippines",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Philippines-controlled."
+        },
+        "erica_reef": {
+          "name": "Erica Reef (Terumbu Siput)",
+          "lat": 8.1,
+          "lon": 114.1,
+          "country": "Malaysia",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Malaysia-controlled."
+        },
+        "mariveles_reef": {
+          "name": "Mariveles Reef (Terumbu Montanani)",
+          "lat": 7.62,
+          "lon": 113.53,
+          "country": "Malaysia",
+          "helipad": true,
+          "port": false,
+          "notes": "AMTI tracked. Malaysia-controlled."
+        }
+      }
+    },
+    "pratas_islands": {
+      "name": "Pratas Islands (Dongsha / Đông Sa)",
+      "features": {
+        "pratas_island": {
+          "name": "Pratas Island (Đảo Đông Sa)",
+          "lat": 20.7,
+          "lon": 116.72,
+          "country": "Taiwan",
+          "airport": {
+            "icao": "RCLM",
+            "runway_m": 1500,
+            "surface": "paved"
+          },
+          "helipad": true,
+          "port": true,
+          "notes": "Taiwan-controlled atoll. 1500m runway, coast guard station. 400km from both Taiwan and Hong Kong."
+        }
+      }
+    },
+    "scarborough_shoal": {
+      "name": "Scarborough Shoal (Huangyan Dao / Bajo de Masi)",
+      "features": {
+        "scarborough_shoal": {
+          "name": "Scarborough Shoal",
+          "lat": 15.18,
+          "lon": 117.75,
+          "country": "Disputed (China effective control)",
+          "airport": null,
+          "helipad": false,
+          "port": false,
+          "observation_post": true,
+          "notes": "No airstrip. Observation post only. China Coast Guard maintains continuous presence since 2012."
+        }
+      }
+    }
+  }
+}

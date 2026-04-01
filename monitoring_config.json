@@ -1,0 +1,54 @@
+{
+  "_updated": "2026-04-01T15:40:00Z",
+  "_focus": "Spratly Islands only (7-12°N, 109-116°E)",
+  "monitoring_bbox": {
+    "lamin": 7.0,
+    "lomin": 109.0,
+    "lamax": 12.0,
+    "lomax": 116.0,
+    "description": "Spratly Islands exclusive monitoring zone"
+  },
+  "active_groups": ["spratly_islands"],
+  "disabled_groups": ["paracel_islands", "pratas_islands", "scarborough_shoal"],
+  "monitoring": {
+    "aircraft": {
+      "method": ["opensky_state_vectors"],
+      "frequency": "every 30min",
+      "bbox": {"lamin": 7.0, "lomin": 109.0, "lamax": 12.0, "lomax": 116.0}
+    },
+    "imagery": {
+      "method": ["satellite_imagery"],
+      "frequency": "daily",
+      "source": "NASA Worldview (MODIS Terra, 250m resolution)"
+    },
+    "ships": {
+      "method": ["satellite_imagery", "ais_web_check"],
+      "frequency": "manual / daily imagery",
+      "note": "AIS requires paid API; ship dots visible in satellite imagery"
+    }
+  },
+  "data_sources": {
+    "satellite_imagery": "NASA Worldview (MODIS Terra, 250m resolution)",
+    "opensky": "OpenSky Network API (free tier, limited coverage in SCS)",
+    "ais": "MarineTraffic URLs (manual), AISHub (free with registration)",
+    "osint": "AMTI/CSIS, Twitter OSINT accounts"
+  },
+  "island_groups": {
+    "paracel_islands": {
+      "center": {"lat": 16.5, "lon": 112.0},
+      "bbox": {"lamin": 15.7, "lomin": 111.0, "lamax": 17.0, "lomax": 113.0}
+    },
+    "spratly_islands": {
+      "center": {"lat": 9.5, "lon": 113.5},
+      "bbox": {"lamin": 7.0, "lomin": 109.0, "lamax": 12.0, "lomax": 116.0}
+    },
+    "pratas_islands": {
+      "center": {"lat": 20.7, "lon": 116.72},
+      "bbox": {"lamin": 20.5, "lomin": 116.5, "lamax": 20.9, "lomax": 117.0}
+    },
+    "scarborough_shoal": {
+      "center": {"lat": 15.18, "lon": 117.75},
+      "bbox": {"lamin": 15.0, "lomin": 117.6, "lamax": 15.4, "lomax": 117.9}
+    }
+  }
+}

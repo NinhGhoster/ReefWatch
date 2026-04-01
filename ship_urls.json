@@ -1,0 +1,314 @@
+{
+  "woody_island": {
+    "name": "Woody Island (Yongxing / Phú Lâm)",
+    "lat": 16.8328,
+    "lon": 112.344,
+    "country": "China",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:112.3440/lat:16.8328/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=16.8328,112.3440&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:112.3440/lat:16.8328/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=16.8328&lng=112.3440&zoom=8"
+    },
+    "type": "port_feature"
+  },
+  "triton_island": {
+    "name": "Triton Island (Zhongjian)",
+    "lat": 15.783,
+    "lon": 111.199,
+    "country": "China",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:111.1990/lat:15.7830/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=15.7830,111.1990&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:111.1990/lat:15.7830/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=15.7830&lng=111.1990&zoom=8"
+    },
+    "type": "port_feature"
+  },
+  "fiery_cross_reef": {
+    "name": "Fiery Cross Reef (Yongshu Jiao / Đá Chữ Thập)",
+    "lat": 9.53,
+    "lon": 112.88,
+    "country": "China",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:112.8800/lat:9.5300/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=9.5300,112.8800&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:112.8800/lat:9.5300/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=9.5300&lng=112.8800&zoom=8"
+    },
+    "type": "port_feature"
+  },
+  "subi_reef": {
+    "name": "Subi Reef (Zhubi Jiao / Đá Subi)",
+    "lat": 10.88,
+    "lon": 114.07,
+    "country": "China",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.0700/lat:10.8800/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=10.8800,114.0700&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.0700/lat:10.8800/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=10.8800&lng=114.0700&zoom=8"
+    },
+    "type": "port_feature"
+  },
+  "mischief_reef": {
+    "name": "Mischief Reef (Meiji Jiao / Đá Vành Khăn)",
+    "lat": 9.921,
+    "lon": 115.506,
+    "country": "China",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:115.5060/lat:9.9210/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=9.9210,115.5060&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:115.5060/lat:9.9210/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=9.9210&lng=115.5060&zoom=8"
+    },
+    "type": "port_feature"
+  },
+  "taiping_island": {
+    "name": "Taiping Island (Itu Aba / Đảo Ba Bình)",
+    "lat": 10.38,
+    "lon": 114.36,
+    "country": "Taiwan",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.3600/lat:10.3800/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=10.3800,114.3600&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.3600/lat:10.3800/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=10.3800&lng=114.3600&zoom=8"
+    },
+    "type": "port_feature"
+  },
+  "thitu_island": {
+    "name": "Thitu Island (Pag-asa / Đảo Thị Tứ)",
+    "lat": 11.05,
+    "lon": 114.28,
+    "country": "Philippines",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.2800/lat:11.0500/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=11.0500,114.2800&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.2800/lat:11.0500/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=11.0500&lng=114.2800&zoom=8"
+    },
+    "type": "port_feature"
+  },
+  "spratly_island": {
+    "name": "Spratly Island (Trường Sa / Đảo Trường Sa)",
+    "lat": 8.64,
+    "lon": 111.92,
+    "country": "Vietnam",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:111.9200/lat:8.6400/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=8.6400,111.9200&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:111.9200/lat:8.6400/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=8.6400&lng=111.9200&zoom=8"
+    },
+    "type": "port_feature"
+  },
+  "swallow_reef": {
+    "name": "Swallow Reef (Layang-Layang / Terumbu Layang)",
+    "lat": 7.37,
+    "lon": 113.85,
+    "country": "Malaysia",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:113.8500/lat:7.3700/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=7.3700,113.8500&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:113.8500/lat:7.3700/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=7.3700&lng=113.8500&zoom=8"
+    },
+    "type": "port_feature"
+  },
+  "pratas_island": {
+    "name": "Pratas Island (Đảo Đông Sa)",
+    "lat": 20.7,
+    "lon": 116.72,
+    "country": "Taiwan",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:116.7200/lat:20.7000/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=20.7000,116.7200&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:116.7200/lat:20.7000/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=20.7000&lng=116.7200&zoom=8"
+    },
+    "type": "port_feature"
+  },
+  "spratly_island_anchorage": {
+    "name": "Spratly Island Anchorage",
+    "lat": 10.0,
+    "lon": 114.0,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.0000/lat:10.0000/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=10.0000,114.0000&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.0000/lat:10.0000/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=10.0000&lng=114.0000&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "thitu_island___pag-asa": {
+    "name": "Thitu Island / Pag-asa",
+    "lat": 11.05,
+    "lon": 114.28,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.2800/lat:11.0500/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=11.0500,114.2800&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.2800/lat:11.0500/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=11.0500&lng=114.2800&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "scarborough_shoal": {
+    "name": "Scarborough Shoal",
+    "lat": 15.13,
+    "lon": 117.76,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:117.7600/lat:15.1300/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=15.1300,117.7600&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:117.7600/lat:15.1300/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=15.1300&lng=117.7600&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "cuarteron_reef": {
+    "name": "Cuarteron Reef",
+    "lat": 8.88,
+    "lon": 112.2,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:112.2000/lat:8.8800/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=8.8800,112.2000&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:112.2000/lat:8.8800/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=8.8800&lng=112.2000&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "johnson_south_reef": {
+    "name": "Johnson South Reef",
+    "lat": 9.77,
+    "lon": 114.28,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.2800/lat:9.7700/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=9.7700,114.2800&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.2800/lat:9.7700/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=9.7700&lng=114.2800&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "gaven_reefs": {
+    "name": "Gaven Reefs",
+    "lat": 10.21,
+    "lon": 114.22,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.2200/lat:10.2100/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=10.2100,114.2200&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.2200/lat:10.2100/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=10.2100&lng=114.2200&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "hughes_reef": {
+    "name": "Hughes Reef",
+    "lat": 9.84,
+    "lon": 114.3,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.3000/lat:9.8400/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=9.8400,114.3000&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.3000/lat:9.8400/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=9.8400&lng=114.3000&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "eldad_reef": {
+    "name": "Eldad Reef",
+    "lat": 10.34,
+    "lon": 114.44,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.4400/lat:10.3400/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=10.3400,114.4400&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.4400/lat:10.3400/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=10.3400&lng=114.4400&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "lankiam_cay": {
+    "name": "Lankiam Cay",
+    "lat": 10.74,
+    "lon": 115.82,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:115.8200/lat:10.7400/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=10.7400,115.8200&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:115.8200/lat:10.7400/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=10.7400&lng=115.8200&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "loaita_cay": {
+    "name": "Loaita Cay",
+    "lat": 10.68,
+    "lon": 114.4,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.4000/lat:10.6800/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=10.6800,114.4000&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.4000/lat:10.6800/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=10.6800&lng=114.4000&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "namyit_island": {
+    "name": "Namyit Island",
+    "lat": 10.18,
+    "lon": 114.36,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.3600/lat:10.1800/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=10.1800,114.3600&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.3600/lat:10.1800/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=10.1800&lng=114.3600&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "west_london_reef": {
+    "name": "West London Reef",
+    "lat": 8.92,
+    "lon": 112.14,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:112.1400/lat:8.9200/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=8.9200,112.1400&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:112.1400/lat:8.9200/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=8.9200&lng=112.1400&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "pigeon_reef": {
+    "name": "Pigeon Reef",
+    "lat": 8.87,
+    "lon": 112.34,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:112.3400/lat:8.8700/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=8.8700,112.3400&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:112.3400/lat:8.8700/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=8.8700&lng=112.3400&zoom=8"
+    },
+    "type": "known_anchorage"
+  },
+  "sin_cowe_island": {
+    "name": "Sin Cowe Island",
+    "lat": 9.87,
+    "lon": 114.33,
+    "country": "mixed",
+    "urls": {
+      "marinetraffic": "https://www.marinetraffic.com/en/ais/index/center:114.3300/lat:9.8700/zoom:12",
+      "vesselfinder": "https://www.vesselfinder.com/?ll=9.8700,114.3300&z=12",
+      "marinetraffic_density": "https://www.marinetraffic.com/en/ais/density/center:114.3300/lat:9.8700/zoom:8",
+      "global_fishing_watch": "https://globalfishingwatch.org/map/?lat=9.8700&lng=114.3300&zoom=8"
+    },
+    "type": "known_anchorage"
+  }
+}
