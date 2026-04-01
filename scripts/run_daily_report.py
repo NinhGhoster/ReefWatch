@@ -22,9 +22,11 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(SCRIPT_DIR)
 IMAGERY_DIR = os.path.join(BASE_DIR, "imagery_history")
 IMAGERY_CHANGES = os.path.join(BASE_DIR, "imagery_changes.jsonl")
+PLANET_CHANGES = os.path.join(BASE_DIR, "planet_changes.jsonl")
+PLANET_FETCH_LOG = os.path.join(BASE_DIR, "planet_fetch_log.jsonl")
 AIRCRAFT_DETECTIONS = os.path.join(BASE_DIR, "aircraft_detections.jsonl")
 ALERTS_LOG = os.path.join(BASE_DIR, "alerts_log.jsonl")
-FEATURES_FILE = os.path.join(BASE_DIR, "data", "scs_features.json")
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "target_features.json")
 
 
 def load_jsonl(path, hours=None, date_filter=None):
@@ -69,6 +71,9 @@ def load_features():
         return {}
     with open(FEATURES_FILE) as f:
         db = json.load(f)
+    # Handle both formats: list (target_features.json) and dict (scs_features.json)
+    if isinstance(db, list):
+        return {f["key"]: f for f in db}
     flat = {}
     for group in db.get("island_groups", {}).values():
         for key, feat in group.get("features", {}).items():
@@ -97,6 +102,26 @@ def count_imagery_files(hours=24):
     return total, len(features)
 
 
+def count_planet_files(hours=24):
+    """Count Planet imagery files captured recently."""
+    if not os.path.isdir(IMAGERY_DIR):
+        return 0, 0
+    cutoff = datetime.now() - timedelta(hours=hours)
+    total = 0
+    features = set()
+    for f in os.listdir(IMAGERY_DIR):
+        if "_planet_" not in f or not f.endswith(".png"):
+            continue
+        path = os.path.join(IMAGERY_DIR, f)
+        mtime = datetime.fromtimestamp(os.path.getmtime(path))
+        if mtime > cutoff:
+            total += 1
+            parts = f.split("_planet_")
+            if parts:
+                features.add(parts[0])
+    return total, len(features)
+
+
 def generate_report(hours=24, date_filter=None):
     """Generate the daily monitoring report as Telegram-formatted text."""
     features_meta = load_features()
@@ -104,13 +129,19 @@ def generate_report(hours=24, date_filter=None):
 
     # Load data
     imagery = load_jsonl(IMAGERY_CHANGES, hours=hours, date_filter=date_filter)
+    planet_changes = load_jsonl(PLANET_CHANGES, hours=hours, date_filter=date_filter)
+    planet_fetches = load_jsonl(PLANET_FETCH_LOG, hours=hours, date_filter=date_filter)
     aircraft = load_jsonl(AIRCRAFT_DETECTIONS, hours=hours, date_filter=date_filter)
     alerts = load_jsonl(ALERTS_LOG, hours=hours, date_filter=date_filter)
 
-    # Imagery analysis
+    # Imagery analysis (NASA Worldview)
     imagery_with_images = [r for r in imagery if r.get("image_captured") or r.get("status") == "ok"]
     changed_imagery = [r for r in imagery if r.get("changed")]
     cloud_affected = [r for r in imagery if r.get("cloud_interference")]
+
+    # Planet analysis
+    planet_fetched = [r for r in planet_fetches if r.get("status") == "ok"]
+    planet_changed = [r for r in planet_changes if r.get("changed")]
 
     # Aircraft analysis
     aircraft_features = defaultdict(int)
@@ -157,6 +188,26 @@ def generate_report(hours=24, date_filter=None):
     if cloud_affected:
         lines.append(f"• ☁️ {len(cloud_affected)} features with cloud interference")
 
+    lines.append("")
+
+    # Planet Labs section
+    lines.append(f"🌍 *Planet Labs (3-5m)*")
+    if planet_fetched:
+        lines.append(f"• {len(planet_fetched)} images fetched")
+    planet_count, planet_feat_count = count_planet_files(hours=hours)
+    if planet_count:
+        lines.append(f"• {planet_count} total images ({planet_feat_count} features)")
+    if planet_changed:
+        lines.append(f"• ⚠️ {len(planet_changed)} with detected changes")
+        for r in planet_changed[:3]:
+            name = r.get("feature", "?")
+            types = ", ".join(r.get("change_types", []))
+            ssim = r.get("ssim_score", "?")
+            lines.append(f"  └ {name} (SSIM: {ssim}, [{types}])")
+    elif planet_fetched or planet_count:
+        lines.append(f"• ✅ No significant changes detected")
+    else:
+        lines.append(f"• ⚪ No Planet data in this period")
     lines.append("")
 
     # Aircraft section

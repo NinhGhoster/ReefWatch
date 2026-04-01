@@ -1,5 +1,5 @@
 {
-  "_updated": "2026-04-01T15:40:00Z",
+  "_updated": "2026-04-01T21:00:00Z",
   "_focus": "Spratly + Paracel Islands (7-12°N, 109-116°E + 15.7-17°N, 111-113°E)",
   "monitoring_bbox": {
     "lamin": 7.0,
@@ -23,7 +23,34 @@
     "imagery": {
       "method": ["satellite_imagery"],
       "frequency": "daily",
-      "source": "NASA Worldview (MODIS Terra, 250m resolution)"
+      "source": "NASA Worldview (MODIS Terra, 250m) + Planet Labs (PSScene 3-5m)",
+      "sources": {
+        "nasa_worldview": {
+          "provider": "NASA",
+          "resolution": "250m",
+          "sensor": "MODIS Terra",
+          "auth": "none",
+          "script": "scripts/imagery_monitor.py"
+        },
+        "planet_labs": {
+          "provider": "Planet Labs",
+          "resolution": "3-5m",
+          "sensor": "PSScene (8-band)",
+          "auth": "API key (Basic auth)",
+          "item_type": "PSScene",
+          "asset": "visual",
+          "cloud_max": 0.2,
+          "script": "scripts/planet_fetch.py",
+          "change_detection": "scripts/planet_change_detection.py"
+        },
+        "sentinel2": {
+          "provider": "ESA (via AWS STAC)",
+          "resolution": "10m",
+          "sensor": "Sentinel-2 L2A",
+          "auth": "none",
+          "script": "scripts/sentinel2_fetch.py"
+        }
+      }
     },
     "ships": {
       "method": ["satellite_imagery", "ais_web_check"],
@@ -32,7 +59,15 @@
     }
   },
   "data_sources": {
-    "satellite_imagery": "NASA Worldview (MODIS Terra, 250m resolution)",
+    "satellite_imagery": "NASA Worldview (MODIS Terra, 250m) + Planet Labs (PSScene 3-5m) + Sentinel-2 (10m)",
+    "planet_labs": {
+      "api": "https://api.planet.com/data/v1",
+      "auth": "Basic (API key as username)",
+      "item_type": "PSScene",
+      "resolution": "3-5m",
+      "bands": 8,
+      "asset": "visual (PNG)"
+    },
     "opensky": "OpenSky Network API (free tier, limited coverage in SCS)",
     "ais": "MarineTraffic URLs (manual), AISHub (free with registration)",
     "osint": "AMTI/CSIS, Twitter OSINT accounts"

@@ -36,3 +36,4 @@ Thumbs.db
 # Secrets
 .env
 *.key
+data/api_keys.json
