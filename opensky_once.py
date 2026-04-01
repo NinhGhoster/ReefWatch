@@ -66,7 +66,7 @@ if __name__ == "__main__":
             print(f"  {feat['name']:30s} → {len(results)} aircraft")
         if api_calls % 20 == 0:
             print(f"  ... {api_calls}/{len(features)} scanned")
-        time.sleep(0.3)
+        time.sleep(1.0)
 
     print(f"\nScanned {api_calls} features. Total aircraft: {len(all_results)}")
     if all_results:

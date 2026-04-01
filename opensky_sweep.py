@@ -27,7 +27,7 @@ BBOX_HALF = 0.15
 INTERVAL = 900  # 15 minutes
 API_URL = "https://opensky-network.org/api/states/all"
 LOG_FILE = os.path.join(SCRIPT_DIR, "detections.jsonl")
-MIN_GAP = 0.3  # seconds between requests
+MIN_GAP = 1.0  # seconds between requests
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────

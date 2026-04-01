@@ -241,7 +241,7 @@ def run_full_scan(features, tracks=False):
         result = query_adsbfi(lat, lon, dist_nm=200)
         adsbfi_count += len(result)
         all_aircraft.extend(result)
-        time.sleep(0.3)
+        time.sleep(1.0)
     if adsbfi_count:
         print(f"  [2/2] ADSB.fi: {adsbfi_count} additional aircraft")
 
