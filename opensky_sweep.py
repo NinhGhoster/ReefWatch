@@ -19,25 +19,22 @@ from datetime import datetime, timezone
 import requests
 
 # ── Config ──────────────────────────────────────────────────────────────
-# Target zones: Spratly + Paracel Islands
-ZONES = [
-    {"name": "spratly", "lamin": 7.0, "lomin": 109.0, "lamax": 12.0, "lomax": 116.0},
-    {"name": "paracel", "lamin": 15.7, "lomin": 111.0, "lamax": 17.0, "lomax": 113.0},
-]
+# Each feature gets its own bbox (±0.15° ≈ 16km radius)
+import json
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+FEATURES_FILE = os.path.join(SCRIPT_DIR, "target_features.json")
+BBOX_HALF = 0.15
 INTERVAL = 900  # 15 minutes
 API_URL = "https://opensky-network.org/api/states/all"
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE = os.path.join(SCRIPT_DIR, "detections.jsonl")
-
-# OpenSky free tier: max 42 requests / 10s → cap at 4 req/s
-MIN_GAP = 0.3  # seconds between requests (well under the limit)
+MIN_GAP = 0.3  # seconds between requests
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 
-def query_opensky(zone):
+def query_opensky(bbox):
     """Return list of aircraft dicts inside the bounding box."""
-    params = {"lamin": zone["lamin"], "lomin": zone["lomin"], "lamax": zone["lamax"], "lomax": zone["lomax"]}
+    params = {"lamin": bbox[0], "lomin": bbox[1], "lamax": bbox[2], "lomax": bbox[3]}
     try:
         resp = requests.get(API_URL, params=params, timeout=30)
         if resp.status_code in (403, 429):
@@ -75,19 +72,30 @@ def append_detections(detections):
             f.write(json.dumps(d, ensure_ascii=False) + "\n")
 
 
+def load_features():
+    """Load target features from JSON."""
+    with open(FEATURES_FILE) as f:
+        return json.load(f)
+
+
 def sweep_loop():
-    """Main loop — query every INTERVAL seconds."""
-    zone_names = "+".join(z["name"] for z in ZONES)
-    print(f"[sweep] {zone_names} monitor started — interval {INTERVAL}s")
+    """Main loop — scan each feature every INTERVAL seconds."""
+    features = load_features()
+    print(f"[sweep] {len(features)} features — interval {INTERVAL}s")
     print(f"[sweep] Log → {LOG_FILE}")
     while True:
         try:
             t0 = time.monotonic()
             all_results = []
-            for zone in ZONES:
-                results = query_opensky(zone)
+            for feat in features:
+                lat, lon = feat["lat"], feat["lon"]
+                bbox = (lat - BBOX_HALF, lon - BBOX_HALF, lat + BBOX_HALF, lon + BBOX_HALF)
+                results = query_opensky(bbox)
+                for r in results:
+                    r["near_feature"] = feat["key"]
+                    r["near_feature_name"] = feat["name"]
                 all_results.extend(results)
-                time.sleep(1)  # rate limit between zones
+                time.sleep(MIN_GAP)
             append_detections(all_results)
             ts_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
             if all_results:

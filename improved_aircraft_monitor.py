@@ -202,35 +202,52 @@ def deduplicate(all_aircraft):
 # ── Main monitor logic ──────────────────────────────────────────────────
 
 def run_full_scan(features, tracks=False):
-    """Run multi-source aircraft scan over SCS."""
+    """Run multi-source aircraft scan — one bbox per feature."""
     ts = datetime.now(timezone.utc).isoformat()
     all_aircraft = []
+    feature_bbox_half = 0.15  # ~16km around each feature
 
-    # Source 1: OpenSky wide SCS scan
-    print(f"  [1/3] OpenSky wide SCS bbox ({SCS_LAMIN}-{SCS_LAMAX}°N, {SCS_LOMIN}-{SCS_LOMAX}°E)...")
-    wide = query_opensky((SCS_LAMIN, SCS_LOMIN, SCS_LAMAX, SCS_LOMAX))
-    print(f"        → {len(wide)} aircraft")
-    all_aircraft.extend(wide)
+    # Source 1: OpenSky per-feature scan
+    print(f"  [1/2] OpenSky per-feature scan ({len(features)} features)...")
+    api_count = 0
+    for feat in features:
+        lat, lon = feat["lat"], feat["lon"]
+        bbox = (
+            lat - feature_bbox_half,
+            lon - feature_bbox_half,
+            lat + feature_bbox_half,
+            lon + feature_bbox_half,
+        )
+        result = query_opensky(bbox)
+        for a in result:
+            a["near_feature"] = feat["key"]
+            a["near_feature_name"] = feat["name"]
+            a["near_country"] = feat["country"]
+        all_aircraft.extend(result)
+        api_count += 1
+        if api_count % 10 == 0:
+            print(f"        ... {api_count}/{len(features)} features scanned, {len(all_aircraft)} aircraft so far")
+        time.sleep(RATE_LIMIT)
+    print(f"        → {len(all_aircraft)} aircraft from {api_count} feature scans")
 
-    # Spratly + Paracel area scan points
+    # Source 2: ADSB.fi center points as backup
     adsbfi_points = [
         (10.0, 112.0, "Spratly core"),
         (10.0, 114.0, "Central Spratly"),
-        (8.0, 110.0, "South Spratly"),
-        (12.0, 113.0, "North Spratly"),
         (16.5, 112.0, "Paracel Islands"),
     ]
     adsbfi_count = 0
     for lat, lon, label in adsbfi_points:
-        result = query_adsbfi(lat, lon, dist_nm=300)
+        result = query_adsbfi(lat, lon, dist_nm=200)
         adsbfi_count += len(result)
         all_aircraft.extend(result)
         time.sleep(0.3)
-    print(f"        → {adsbfi_count} aircraft (across all points)")
+    if adsbfi_count:
+        print(f"  [2/2] ADSB.fi: {adsbfi_count} additional aircraft")
 
     # Deduplicate
     unique = deduplicate(all_aircraft)
-    print(f"  [3] Deduplication: {len(all_aircraft)} raw → {len(unique)} unique")
+    print(f"  [3] Dedup: {len(all_aircraft)} raw → {len(unique)} unique")
 
     # Map to features
     for a in unique:

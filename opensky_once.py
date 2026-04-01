@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """
 Spratly + Paracel Islands airspace monitor — single check.
-Queries OpenSky Network API for aircraft in both zones.
+Scans each feature individually with its own bounding box.
 
 Usage:  python3 opensky_once.py
 """
 
 import json
+import os
 import time
 import requests
 
-ZONES = [
-    {"name": "spratly", "lamin": 7.0, "lomin": 109.0, "lamax": 12.0, "lomax": 116.0},
-    {"name": "paracel", "lamin": 15.7, "lomin": 111.0, "lamax": 17.0, "lomax": 113.0},
-]
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+FEATURES_FILE = os.path.join(SCRIPT_DIR, "target_features.json")
+BBOX_HALF = 0.15
 API_URL = "https://opensky-network.org/api/states/all"
 
-def query_opensky(zone):
-    params = {"lamin": zone["lamin"], "lomin": zone["lomin"], "lamax": zone["lamax"], "lomax": zone["lomax"]}
+def query_opensky(bbox):
+    params = {"lamin": bbox[0], "lomin": bbox[1], "lamax": bbox[2], "lomax": bbox[3]}
     try:
         resp = requests.get(API_URL, params=params, timeout=30)
         if resp.status_code == 403:
@@ -48,22 +48,27 @@ def query_opensky(zone):
     return results
 
 if __name__ == "__main__":
-    zone_names = "+".join(z["name"] for z in ZONES)
-    print(f"Checking OpenSky — {zone_names} zones...")
+    with open(FEATURES_FILE) as f:
+        features = json.load(f)
+    print(f"Checking OpenSky — {len(features)} features individually...")
     all_results = []
-    for zone in ZONES:
-        print(f"\n  [{zone['name']}] {zone['lamin']}-{zone['lamax']}°N, {zone['lomin']}-{zone['lomax']}°E")
-        results = query_opensky(zone)
+    api_calls = 0
+    for feat in features:
+        lat, lon = feat["lat"], feat["lon"]
+        bbox = (lat - BBOX_HALF, lon - BBOX_HALF, lat + BBOX_HALF, lon + BBOX_HALF)
+        results = query_opensky(bbox)
         for r in results:
-            r["zone"] = zone["name"]
+            r["near_feature"] = feat["key"]
+            r["near_feature_name"] = feat["name"]
         all_results.extend(results)
+        api_calls += 1
         if results:
-            print(f"    → {len(results)} aircraft")
-        else:
-            print(f"    → No aircraft")
-        time.sleep(1)
+            print(f"  {feat['name']:30s} → {len(results)} aircraft")
+        if api_calls % 20 == 0:
+            print(f"  ... {api_calls}/{len(features)} scanned")
+        time.sleep(0.3)
 
-    print(f"\nTotal: {len(all_results)} aircraft")
+    print(f"\nScanned {api_calls} features. Total aircraft: {len(all_results)}")
     if all_results:
         for r in all_results:
             print(json.dumps(r, ensure_ascii=False))

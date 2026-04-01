@@ -1,0 +1,772 @@
+[
+  {
+    "key": "fiery_cross_reef",
+    "name": "Fiery Cross Reef (Yongshu Jiao / \u0110\u00e1 Ch\u1eef Th\u1eadp)",
+    "lat": 9.53,
+    "lon": 112.88,
+    "group": "spratly_islands",
+    "country": "China",
+    "has_airport": true,
+    "has_helipad": true
+  },
+  {
+    "key": "subi_reef",
+    "name": "Subi Reef (Zhubi Jiao / \u0110\u00e1 Subi)",
+    "lat": 10.88,
+    "lon": 114.07,
+    "group": "spratly_islands",
+    "country": "China",
+    "has_airport": true,
+    "has_helipad": true
+  },
+  {
+    "key": "mischief_reef",
+    "name": "Mischief Reef (Meiji Jiao / \u0110\u00e1 V\u00e0nh Kh\u0103n)",
+    "lat": 9.921,
+    "lon": 115.506,
+    "group": "spratly_islands",
+    "country": "China",
+    "has_airport": true,
+    "has_helipad": true
+  },
+  {
+    "key": "cuarteron_reef",
+    "name": "Cuarteron Reef (Huayang Jiao / \u0110\u00e1 Ch\u00e2u Vi\u00ean)",
+    "lat": 8.8643,
+    "lon": 112.832,
+    "group": "spratly_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "gaven_reefs",
+    "name": "Gaven Reefs (Nanxun Jiao / \u0110\u00e1 Ga Ven)",
+    "lat": 10.2054,
+    "lon": 114.226,
+    "group": "spratly_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "johnson_south_reef",
+    "name": "Johnson South Reef (Chigua Jiao / \u0110\u00e1 G\u1ea1c Ma)",
+    "lat": 9.7162,
+    "lon": 114.287,
+    "group": "spratly_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "hughes_reef",
+    "name": "Hughes Reef (Dongmen Jiao / \u0110\u00e1 T\u01b0 Ngh\u0129a)",
+    "lat": 9.9083,
+    "lon": 114.498,
+    "group": "spratly_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "taiping_island",
+    "name": "Taiping Island (Itu Aba / \u0110\u1ea3o Ba B\u00ecnh)",
+    "lat": 10.38,
+    "lon": 114.36,
+    "group": "spratly_islands",
+    "country": "Taiwan",
+    "has_airport": true,
+    "has_helipad": true
+  },
+  {
+    "key": "thitu_island",
+    "name": "Thitu Island (Pag-asa / \u0110\u1ea3o Th\u1ecb T\u1ee9)",
+    "lat": 11.05,
+    "lon": 114.28,
+    "group": "spratly_islands",
+    "country": "Philippines",
+    "has_airport": true,
+    "has_helipad": true
+  },
+  {
+    "key": "spratly_island",
+    "name": "Spratly Island (Tr\u01b0\u1eddng Sa / \u0110\u1ea3o Tr\u01b0\u1eddng Sa)",
+    "lat": 8.64,
+    "lon": 111.92,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": true,
+    "has_helipad": true
+  },
+  {
+    "key": "swallow_reef",
+    "name": "Swallow Reef (Layang-Layang / Terumbu Layang)",
+    "lat": 7.37,
+    "lon": 113.85,
+    "group": "spratly_islands",
+    "country": "Malaysia",
+    "has_airport": true,
+    "has_helipad": true
+  },
+  {
+    "key": "namyit_island",
+    "name": "Namyit Island (Nam Y\u1ebft / Hongxiu Dao)",
+    "lat": 10.17,
+    "lon": 114.37,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "sin_cowe_island",
+    "name": "Sin Cowe Island (Sinh T\u1ed3n / Jinghong Dao)",
+    "lat": 9.88,
+    "lon": 114.33,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "song_tu_tay",
+    "name": "Song Tu Tay (Southwest Cay / \u0110\u1ea3o Song T\u1eed T\u00e2y)",
+    "lat": 11.42,
+    "lon": 114.33,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "amboyna_cay",
+    "name": "Amboyna Cay (Tr\u01b0\u1eddng Sa \u0110\u00f4ng / An Boon)",
+    "lat": 7.92,
+    "lon": 112.92,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "commodore_reef",
+    "name": "Commodore Reef (Terumbu Laksamana / Erica)",
+    "lat": 8.0,
+    "lon": 114.17,
+    "group": "spratly_islands",
+    "country": "Malaysia",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "ardasier_reef",
+    "name": "Ardasier Reef (Terumbu Ubi)",
+    "lat": 7.62,
+    "lon": 113.97,
+    "group": "spratly_islands",
+    "country": "Malaysia",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "dallas_reef",
+    "name": "Dallas Reef (Terumbu Semarang)",
+    "lat": 7.62,
+    "lon": 113.85,
+    "group": "spratly_islands",
+    "country": "Malaysia",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "investigator_shoal",
+    "name": "Investigator Shoal (Terumbu Peninjau)",
+    "lat": 8.08,
+    "lon": 114.67,
+    "group": "spratly_islands",
+    "country": "Malaysia",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "station_mike",
+    "name": "Station Mike Helipad",
+    "lat": 7.967,
+    "lon": 113.916,
+    "group": "spratly_islands",
+    "country": "Malaysia",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "station_sierra",
+    "name": "Station Sierra Helipad",
+    "lat": 8.103,
+    "lon": 114.138,
+    "group": "spratly_islands",
+    "country": "Malaysia",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "lawak_island",
+    "name": "Lawak Island (Nanshan) Helipad",
+    "lat": 10.733,
+    "lon": 115.802,
+    "group": "spratly_islands",
+    "country": "Philippines",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "parola_island",
+    "name": "Parola Island (Northeast Cay) Helipad",
+    "lat": 11.453,
+    "lon": 114.356,
+    "group": "spratly_islands",
+    "country": "Philippines",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "kota_island",
+    "name": "Kota Island (Loaita) Heliport",
+    "lat": 10.668,
+    "lon": 114.424,
+    "group": "spratly_islands",
+    "country": "Philippines",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "viper_north_shoal",
+    "name": "Maya-maya (Viper North Shoal) Helipad",
+    "lat": 8.358,
+    "lon": 115.238,
+    "group": "spratly_islands",
+    "country": "Philippines",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "discovery_great_reef",
+    "name": "Discovery Great Reef (\u0110\u00e1 L\u1edbn) Helipad",
+    "lat": 10.023,
+    "lon": 113.854,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "pearson_reef_a",
+    "name": "Pearson Reef A (\u0110\u1ea3o Phan Vinh) Helipad",
+    "lat": 8.975,
+    "lon": 113.708,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "pearson_reef_b",
+    "name": "Pearson Reef B (\u0110\u1ea3o Phan Vinh) Helipad",
+    "lat": 8.959,
+    "lon": 113.653,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "central_london_reef",
+    "name": "Central London Reef (Tr\u01b0\u1eddng Sa \u0110\u00f4ng) Helipad",
+    "lat": 8.931,
+    "lon": 112.353,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "sand_cay",
+    "name": "Sand Cay (\u0110\u1ea3o S\u01a1n Ca) Helipad",
+    "lat": 10.374,
+    "lon": 114.481,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "orleana_shoal",
+    "name": "Orleana Shoal (B\u00e3i V\u0169ng M\u00e2y 1) Helipad",
+    "lat": 7.703,
+    "lon": 111.752,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "kingston_shoal",
+    "name": "Kingston Shoal (B\u00e3i V\u0169ng M\u00e2y 2) Helipad",
+    "lat": 7.535,
+    "lon": 111.547,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "bombay_castle_shoal",
+    "name": "Bombay Castle Shoal (B\u00e3i V\u0169ng M\u00e2y 3) Helipad",
+    "lat": 7.875,
+    "lon": 111.745,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "alison_reef",
+    "name": "Alison Reef (B\u00e3i T\u1ed1c Tan)",
+    "lat": 9.83,
+    "lon": 114.28,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "barque_canada_reef",
+    "name": "Barque Canada Reef (B\u00e3i Thuy\u1ec1n Ch\u00e0i)",
+    "lat": 8.1,
+    "lon": 113.18,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "collins_reef",
+    "name": "Collins Reef (\u0110\u00e1 C\u00f4 Lin)",
+    "lat": 9.77,
+    "lon": 114.22,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "cornwallis_south_reef",
+    "name": "Cornwallis South Reef (\u0110\u00e1 N\u00fai Le)",
+    "lat": 8.73,
+    "lon": 114.17,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "east_reef",
+    "name": "East Reef (\u0110\u00e1 \u0110\u00f4ng)",
+    "lat": 8.83,
+    "lon": 112.62,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "grierson_reef",
+    "name": "Grierson Reef (\u0110\u1ea3o Sinh T\u1ed3n \u0110\u00f4ng)",
+    "lat": 9.9,
+    "lon": 114.56,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "ladd_reef",
+    "name": "Ladd Reef (\u0110\u00e1 L\u00e1t)",
+    "lat": 8.7,
+    "lon": 111.7,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "lansdowne_reef",
+    "name": "Lansdowne Reef (\u0110\u00e1 Len \u0110ao)",
+    "lat": 10.25,
+    "lon": 114.38,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "petley_reef",
+    "name": "Petley Reef (\u0110\u00e1 N\u00fai Th\u1ecb)",
+    "lat": 10.42,
+    "lon": 114.52,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "south_reef",
+    "name": "South Reef (\u0110\u00e1 Nam)",
+    "lat": 11.4,
+    "lon": 114.33,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "west_reef",
+    "name": "West Reef (\u0110\u00e1 T\u00e2y)",
+    "lat": 8.83,
+    "lon": 112.2,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "dk1_alexandra_bank",
+    "name": "DK1 Platform - Alexandra Bank",
+    "lat": 11.4,
+    "lon": 112.6,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "dk1_grainger_bank",
+    "name": "DK1 Platform - Grainger Bank",
+    "lat": 10.33,
+    "lon": 112.83,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "dk1_prince_consort_bank",
+    "name": "DK1 Platform - Prince Consort Bank",
+    "lat": 8.95,
+    "lon": 112.2,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "dk1_prince_of_wales_bank",
+    "name": "DK1 Platform - Prince of Wales Bank",
+    "lat": 8.95,
+    "lon": 112.83,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "dk1_rifleman_bank",
+    "name": "DK1 Platform - Rifleman Bank",
+    "lat": 8.1,
+    "lon": 111.83,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "dk1_vanguard_bank",
+    "name": "DK1 Platform - Vanguard Bank",
+    "lat": 7.33,
+    "lon": 109.67,
+    "group": "spratly_islands",
+    "country": "Vietnam",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "flat_island",
+    "name": "Flat Island (Patag Island)",
+    "lat": 10.83,
+    "lon": 115.83,
+    "group": "spratly_islands",
+    "country": "Philippines",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "loaita_cay",
+    "name": "Loaita Cay (Panata Island)",
+    "lat": 10.67,
+    "lon": 114.37,
+    "group": "spratly_islands",
+    "country": "Philippines",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "second_thomas_shoal",
+    "name": "Second Thomas Shoal (Ayungin)",
+    "lat": 9.75,
+    "lon": 115.83,
+    "group": "spratly_islands",
+    "country": "Philippines",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "west_york_island",
+    "name": "West York Island (Likas Island)",
+    "lat": 11.03,
+    "lon": 115.02,
+    "group": "spratly_islands",
+    "country": "Philippines",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "erica_reef",
+    "name": "Erica Reef (Terumbu Siput)",
+    "lat": 8.1,
+    "lon": 114.1,
+    "group": "spratly_islands",
+    "country": "Malaysia",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "mariveles_reef",
+    "name": "Mariveles Reef (Terumbu Montanani)",
+    "lat": 7.62,
+    "lon": 113.53,
+    "group": "spratly_islands",
+    "country": "Malaysia",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "woody_island",
+    "name": "Woody Island (Yongxing / Ph\u00fa L\u00e2m)",
+    "lat": 16.8328,
+    "lon": 112.344,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": true,
+    "has_helipad": true
+  },
+  {
+    "key": "rocky_island",
+    "name": "Rocky Island (Shidao)",
+    "lat": 16.8,
+    "lon": 112.3,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "duncan_island",
+    "name": "Duncan Island (Chenhang)",
+    "lat": 16.4542,
+    "lon": 111.707,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "robert_island",
+    "name": "Robert Island (Dongdao)",
+    "lat": 16.77,
+    "lon": 112.18,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "lincoln_island",
+    "name": "Lincoln Island (Zhaoshu)",
+    "lat": 16.67,
+    "lon": 112.72,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "triton_island",
+    "name": "Triton Island (Zhongjian)",
+    "lat": 15.783,
+    "lon": 111.199,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": true,
+    "has_helipad": true
+  },
+  {
+    "key": "pattle_island",
+    "name": "Pattle Island (Shanhu)",
+    "lat": 16.5351,
+    "lon": 111.609,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "money_island",
+    "name": "Money Island (Jinyin)",
+    "lat": 16.4475,
+    "lon": 111.507,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "tree_island",
+    "name": "Tree Island (Zhaoshudao)",
+    "lat": 16.9782,
+    "lon": 112.266,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "west_sand",
+    "name": "West Sand",
+    "lat": 16.97,
+    "lon": 112.2,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "north_island",
+    "name": "North Island",
+    "lat": 16.9606,
+    "lon": 112.315,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "antelope_reef",
+    "name": "Antelope Reef (Lingyang Jiao)",
+    "lat": 16.4464,
+    "lon": 111.607,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "bombay_reef",
+    "name": "Bombay Reef (Langhua Jiao)",
+    "lat": 16.02,
+    "lon": 112.32,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "drummond_island",
+    "name": "Drummond Island (Jinqing Dao)",
+    "lat": 16.63,
+    "lon": 111.75,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "middle_island",
+    "name": "Middle Island (Zhong Dao)",
+    "lat": 16.95,
+    "lon": 112.25,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": true
+  },
+  {
+    "key": "north_reef",
+    "name": "North Reef (Bei Jiao)",
+    "lat": 17.07,
+    "lon": 111.58,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "observation_bank",
+    "name": "Observation Bank (Yin Yu)",
+    "lat": 16.55,
+    "lon": 111.68,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "quanfu_island",
+    "name": "Quanfu Island (Quanfu Dao)",
+    "lat": 16.55,
+    "lon": 111.7,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "south_island",
+    "name": "South Island (Nan Dao)",
+    "lat": 16.95,
+    "lon": 112.23,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "south_sand",
+    "name": "South Sand (Nan Shazhou)",
+    "lat": 16.95,
+    "lon": 112.24,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": false
+  },
+  {
+    "key": "yagong_island",
+    "name": "Yagong Island (Yagong Dao)",
+    "lat": 16.58,
+    "lon": 111.73,
+    "group": "paracel_islands",
+    "country": "China",
+    "has_airport": false,
+    "has_helipad": false
+  }
+]
