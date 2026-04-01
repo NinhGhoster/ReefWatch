@@ -24,9 +24,13 @@ import urllib.error
 from datetime import datetime, timedelta, timezone
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FEATURES_FILE = os.path.join(SCRIPT_DIR, "scs_features.json")
-IMAGERY_DIR = os.path.join(SCRIPT_DIR, "imagery_history")
-LOG_FILE = os.path.join(SCRIPT_DIR, "imagery_changes.jsonl")
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+# Ensure scripts dir is on path for change_detector import
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "scs_features.json")
+IMAGERY_DIR = os.path.join(BASE_DIR, "imagery_history")
+LOG_FILE = os.path.join(BASE_DIR, "imagery_changes.jsonl")
 os.makedirs(IMAGERY_DIR, exist_ok=True)
 
 # Rate limit between NASA Worldview requests
@@ -83,7 +87,7 @@ def fetch_worldview_image(name, lat, lon, date_str, bbox=0.15, width=512, height
 
 
 def file_hash(filepath):
-    """MD5 hash of a file for change detection."""
+    """MD5 hash of a file for change detection (legacy, kept for reference)."""
     h = hashlib.md5()
     with open(filepath, "rb") as f:
         for chunk in iter(lambda: f.read(8192), b""):
@@ -148,13 +152,34 @@ def analyze_pixels(filepath):
 
 
 def detect_change(current_path, previous_path, threshold=0.05):
-    """Compare two images for changes using file hash + size comparison.
+    """Compare two images using SSIM-based change detection.
     
+    Falls back to hash+size comparison if SSIM unavailable.
     Returns dict with change info.
     """
     if not previous_path or not os.path.isfile(previous_path):
         return {"changed": None, "reason": "no_previous"}
     
+    # Try SSIM-based detection first
+    try:
+        from change_detector import compare_images
+        ssim_result = compare_images(previous_path, current_path)
+        if "error" not in ssim_result:
+            return {
+                "changed": ssim_result.get("changed"),
+                "ssim_score": ssim_result.get("ssim_score"),
+                "pixel_diff_pct": ssim_result.get("pixel_diff_pct"),
+                "brightness_change": ssim_result.get("brightness_change"),
+                "confidence": ssim_result.get("confidence"),
+                "change_types": ssim_result.get("change_types", []),
+                "cloud_interference": ssim_result.get("cloud_interference", False),
+                "method": "ssim",
+                "previous_file": os.path.basename(previous_path),
+            }
+    except Exception:
+        pass
+    
+    # Fallback: hash + size comparison
     curr_hash = file_hash(current_path)
     prev_hash = file_hash(previous_path)
     
@@ -172,6 +197,7 @@ def detect_change(current_path, previous_path, threshold=0.05):
         "significant_change": significant_size_change,
         "size_diff_bytes": size_diff,
         "size_change_ratio": round(size_ratio, 4),
+        "method": "hash_size",
         "previous_file": os.path.basename(previous_path),
     }
 
