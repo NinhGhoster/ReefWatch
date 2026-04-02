@@ -114,6 +114,53 @@ Follow this pattern when processing satellite imagery:
 
 **Note**: Full-resolution (3-5m PNG) requires Planet Analysis or Education Pro plan.
 
+## Manual Download Workflow (Planet Explorer)
+
+Due to Education & Research API plan limitations, full-resolution imagery must be downloaded via the Planet Explorer web UI.
+
+### Current Status
+
+| Feature | API Access | Web UI |
+|---------|------------|--------|
+| Search (find items) | ✅ Works | ✅ Works |
+| Thumbnails (256×256) | ✅ Works | ✅ Works |
+| Full-res download (3-5m) | ❌ No permission | ✅ Works |
+| Orders API | ❌ No permission | N/A |
+
+### Download Settings for Reefwatch
+
+**Search coordinates (use in Planet Explorer):**
+
+```
+Woody Island (Paracel): 16.78-16.88°N, 112.29-112.39°E
+Fiery Cross Reef (Spratly): 9.48-9.58°N, 112.83-112.93°E
+```
+
+**Recommended settings:**
+- Item type: PSScene
+- Date range: Last 30 days
+- Cloud cover: ≤ 20%
+- Product bundle: `visual` (RGB, GeoTIFF, 3-5m resolution)
+- File size: ~10-20MB per scene
+
+### Downloaded Files
+
+Place downloaded images in: `imagery_history/`
+
+Naming convention: `{feature_key}_{date}.png` or `{feature_key}_{date}.tif`
+- Example: `woody_island_2026-04-02.tif`
+
+### Processing
+
+Once images are downloaded:
+1. Run `scripts/planet_change_detection.py` for SSIM comparison
+2. Run `scripts/change_detector.py` for broader analysis
+3. Check `scripts/alert_engine.py` for notification setup
+
+---
+
+
+
 ---
 
 ## Flight Tracking (from flightclaw skill)
@@ -216,6 +263,124 @@ All detection logs are newline-delimited JSON:
 6. **No night coverage**: MODIS Terra daytime pass only
 
 ---
+
+
+---
+
+## Complete Feature List (77 features)
+
+### Paracel Islands (21) — All China
+
+| Feature | Coordinates | Note |
+|---------|-------------|------|
+| North Reef | 17.07°N, 111.58°E | |
+| Tree Island | 16.98°N, 112.27°E | |
+| West Sand | 16.97°N, 112.20°E | |
+| North Island | 16.96°N, 112.32°E | |
+| Middle Island | 16.95°N, 112.25°E | |
+| South Island | 16.95°N, 112.23°E | |
+| South Sand | 16.95°N, 112.24°E | |
+| Woody Island | 16.83°N, 112.34°E | ✈️ Airstrip |
+| Rocky Island | 16.80°N, 112.30°E | |
+| Robert Island | 16.77°N, 112.18°E | |
+| Lincoln Island | 16.67°N, 112.72°E | |
+| Drummond Island | 16.63°N, 111.75°E | |
+| Yagong Island | 16.58°N, 111.73°E | |
+| Observation Bank | 16.55°N, 111.68°E | |
+| Quanfu Island | 16.55°N, 111.70°E | |
+| Pattle Island | 16.54°N, 111.61°E | |
+| Duncan Island | 16.45°N, 111.71°E | |
+| Money Island | 16.45°N, 111.51°E | |
+| Antelope Reef | 16.45°N, 111.61°E | |
+| Bombay Reef | 16.02°N, 112.32°E | |
+| Triton Island | 15.78°N, 111.20°E | ✈️ Airstrip |
+
+### Spratly Islands (56)
+
+#### China (7)
+| Feature | Coordinates | Note |
+|---------|-------------|------|
+| Subi Reef | 10.88°N, 114.07°E | ✈️ Airstrip |
+| Gaven Reefs | 10.21°N, 114.23°E | |
+| Mischief Reef | 9.92°N, 115.51°E | ✈️ Airstrip |
+| Hughes Reef | 9.91°N, 114.50°E | |
+| Johnson South Reef | 9.72°N, 114.29°E | |
+| Fiery Cross Reef | 9.53°N, 112.88°E | ✈️ Airstrip |
+| Cuarteron Reef | 8.86°N, 112.83°E | |
+
+#### Vietnam (30)
+| Feature | Coordinates | Note |
+|---------|-------------|------|
+| Song Tu Tay | 11.42°N, 114.33°E | |
+| South Reef | 11.40°N, 114.33°E | |
+| DK1 - Alexandra Bank | 11.40°N, 112.60°E | Oil platform |
+| Petley Reef | 10.42°N, 114.52°E | |
+| Sand Cay | 10.37°N, 114.48°E | |
+| DK1 - Grainger Bank | 10.33°N, 112.83°E | Oil platform |
+| Lansdowne Reef | 10.25°N, 114.38°E | |
+| Namyit Island | 10.17°N, 114.37°E | |
+| Discovery Great Reef | 10.02°N, 113.85°E | |
+| Grierson Reef | 9.90°N, 114.56°E | |
+| Sin Cowe Island | 9.88°N, 114.33°E | |
+| Alison Reef | 9.83°N, 114.28°E | |
+| Collins Reef | 9.77°N, 114.22°E | |
+| Pearson Reef A | 8.98°N, 113.71°E | |
+| Pearson Reef B | 8.96°N, 113.65°E | |
+| DK1 - Prince Consort | 8.95°N, 112.20°E | Oil platform |
+| DK1 - Prince of Wales | 8.95°N, 112.83°E | Oil platform |
+| Central London Reef | 8.93°N, 112.35°E | |
+| East Reef | 8.83°N, 112.62°E | |
+| West Reef | 8.83°N, 112.20°E | |
+| Cornwallis South Reef | 8.73°N, 114.17°E | |
+| Ladd Reef | 8.70°N, 111.70°E | |
+| Spratly Island | 8.64°N, 111.92°E | ✈️ Airstrip |
+| Barque Canada Reef | 8.10°N, 113.18°E | |
+| DK1 - Rifleman Bank | 8.10°N, 111.83°E | Oil platform |
+| Amboyna Cay | 7.92°N, 112.92°E | |
+| Bombay Castle Shoal | 7.88°N, 111.75°E | |
+| Orleana Shoal | 7.70°N, 111.75°E | |
+| Kingston Shoal | 7.54°N, 111.55°E | |
+| DK1 - Vanguard Bank | 7.33°N, 109.67°E | Oil platform |
+
+#### Philippines (9)
+| Feature | Coordinates | Note |
+|---------|-------------|------|
+| Parola Island | 11.45°N, 114.36°E | |
+| Thitu Island | 11.05°N, 114.28°E | ✈️ Airstrip |
+| West York Island | 11.03°N, 115.02°E | |
+| Flat Island | 10.83°N, 115.83°E | |
+| Lawak Island | 10.73°N, 115.80°E | |
+| Loaita Cay | 10.67°N, 114.37°E | |
+| Kota Island | 10.67°N, 114.42°E | |
+| Second Thomas Shoal | 9.75°N, 115.83°E | |
+| Maya-maya | 8.36°N, 115.24°E | |
+
+#### Malaysia (9)
+| Feature | Coordinates | Note |
+|---------|-------------|------|
+| Station Sierra Helipad | 8.10°N, 114.14°E | |
+| Erica Reef | 8.10°N, 114.10°E | |
+| Investigator Shoal | 8.08°N, 114.67°E | |
+| Commodore Reef | 8.00°N, 114.17°E | |
+| Station Mike Helipad | 7.97°N, 113.92°E | |
+| Ardasier Reef | 7.62°N, 113.97°E | |
+| Dallas Reef | 7.62°N, 113.85°E | |
+| Mariveles Reef | 7.62°N, 113.53°E | |
+| Swallow Reef | 7.37°N, 113.85°E | ✈️ Airstrip |
+
+#### Taiwan (1)
+| Feature | Coordinates | Note |
+|---------|-------------|------|
+| Taiping Island | 10.38°N, 114.36°E | ✈️ Airstrip |
+
+### Airstrips (7 total)
+- China: Fiery Cross, Subi, Mischief (3)
+- Vietnam: Spratly Island (1)
+- Philippines: Thitu Island (1)
+- Malaysia: Swallow Reef (1)
+- Taiwan: Taiping Island (1)
+- Paracel: Woody Island, Triton Island (2)
+
 
 ## Skills Installed
 
