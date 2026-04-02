@@ -6,10 +6,10 @@ Instructions for AI agents working on the Reefwatch South China Sea monitoring p
 
 ## Project Overview
 
-Reefwatch monitors the Spratly and Paracel Islands (79 features, 5 claimant nations) using free OSINT sources:
-- **Satellite imagery** — NASA Worldview (MODIS Terra, 250m)
+Reefwatch monitors the Spratly and Paracel Islands (77 features, 5 claimant nations) using free OSINT sources:
+- **Satellite imagery** — NASA Worldview (MODIS, 250m), Sentinel-2 (10m), Planet Labs (3-5m thumbnails)
 - **Aircraft tracking** — OpenSky Network (per-feature bounding boxes)
-- **Ship monitoring** — AIS URL generation (AISHub when key available)
+- **Ship monitoring** — AIS URLs / Global Fishing Watch API (pending permissions)
 
 All scripts are in `scripts/`. Configuration and data in `data/`. Documentation in `docs/`.
 
@@ -96,6 +96,23 @@ Follow this pattern when processing satellite imagery:
 - Compare same-feature images across dates, not cross-feature
 - Use `_latest.png` symlinks for quick current-state checks
 - Archive raw imagery — never delete, storage is cheap
+
+### Planet Labs Integration
+
+**API Plan**: Education & Research Basic (thumbnail-only, 256×256)
+
+- **Resolution**: 3-5m (PSScene) thumbnails at 256×256px
+- **Search**: Per-feature bbox (±0.05°), cloud_cover < 20%, prefers standard quality
+- **Download**: Direct thumbnail URL (no asset activation needed for this plan)
+- **Change Detection**: SSIM comparison via `planet_change_detection.py`
+
+**Classification Types** (from SSIM analysis):
+- `new_construction` — New structures visible on previously empty ground
+- `new_vessel` — Ship/vessel appeared where there was none
+- `major_change` — Significant structural changes
+- `cloud_interference` — Cloud contamination in comparison
+
+**Note**: Full-resolution (3-5m PNG) requires Planet Analysis or Education Pro plan.
 
 ---
 
@@ -191,11 +208,12 @@ All detection logs are newline-delimited JSON:
 
 ## Known Limitations
 
-1. **OpenSky free tier**: Rate-limited, limited military aircraft coverage over open ocean
-2. **No satellite AIS**: Ship tracking requires paid API for open ocean coverage
-3. **250m resolution**: Ships are 2-4 pixels; aircraft barely visible in imagery
-4. **Cloud interference**: ~30% of imagery unusable due to clouds in tropics
-5. **No night coverage**: MODIS Terra daytime pass only
+1. **Planet thumbnails**: Education plan only gives 256×256px — insufficient for detailed ship identification
+2. **OpenSky free tier**: Rate-limited, limited military aircraft coverage over open ocean
+3. **No satellite AIS**: Ship tracking requires paid API for open ocean coverage
+4. **250m resolution**: Ships are 2-4 pixels; aircraft barely visible in MODIS imagery
+5. **Cloud interference**: ~30% of imagery unusable due to clouds in tropics
+6. **No night coverage**: MODIS Terra daytime pass only
 
 ---
 
