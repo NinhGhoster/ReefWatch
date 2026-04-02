@@ -38,6 +38,7 @@ PLANET_SEARCH_URL = f"{PLANET_API_BASE}/quick-search"
 ITEM_TYPE = "PSScene"
 ASSET_TYPE = "visual"
 CLOUD_MAX = 0.2
+PREFER_QUALITY = os.environ.get("PLANET_QUALITY", "standard")  # standard or test
 GEOMETRY_DELTA = 0.05  # ±0.05° around feature center
 
 # Rate limit
@@ -157,7 +158,11 @@ def pick_best_per_day(items):
 
     best = {}
     for date_str, day_items in by_date.items():
-        day_items.sort(key=lambda x: x["properties"]["cloud_cover"])
+        # Prefer standard quality, then lowest cloud
+        day_items.sort(key=lambda x: (
+            0 if x["properties"].get("quality_category") == "standard" else 1,
+            x["properties"]["cloud_cover"]
+        ))
         best[date_str] = day_items[0]
 
     return best
@@ -279,98 +284,33 @@ def fetch_feature(feature, date_start, date_end, resume=False):
 
         print(f"   📥 {date_str}: activating asset (cloud={cloud:.0%})...")
 
-        # Check asset availability first
-        asset_status = get_asset_status(item_id)
-        if asset_status["status"] == "unavailable":
-            # Fall back to thumbnail download
-            thumb_url = item.get("_links", {}).get("thumbnail")
-            if thumb_url:
-                outfile = os.path.join(IMAGERY_DIR, f"{key}_planet_{date_str}.png")
-                try:
-                    resp = requests.get(thumb_url, auth=get_auth(), stream=True, timeout=30)
-                    resp.raise_for_status()
-                    with open(outfile, "wb") as f:
-                        for chunk in resp.iter_content(chunk_size=8192):
-                            f.write(chunk)
-                    size = os.path.getsize(outfile)
-                    print(f"   ✅ {date_str}: thumbnail downloaded ({size // 1024}KB)")
-                    downloaded.append((date_str, outfile, size))
-                    log_fetch({
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "feature": key, "name": name, "date": date_str,
-                        "item_id": item_id, "cloud_cover": cloud,
-                        "file": os.path.basename(outfile), "size": size,
-                        "status": "ok_thumbnail"
-                    })
-                except Exception as e:
-                    print(f"   ⚠️  {date_str}: no downloadable asset — {e}")
-            else:
-                print(f"   ⚠️  {date_str}: no visual asset available")
-            continue
-
-        # Activate and wait for asset
-        try:
-            activate_asset(item_id)
-        except requests.exceptions.HTTPError as e:
-            print(f"   ⚠️  {date_str}: activation failed ({e.response.status_code}), using thumbnail")
-            # Fall back to thumbnail
-            thumb_url = item.get("_links", {}).get("thumbnail")
-            if thumb_url:
-                outfile = os.path.join(IMAGERY_DIR, f"{key}_planet_{date_str}.png")
-                try:
-                    resp = requests.get(thumb_url, auth=get_auth(), stream=True, timeout=30)
-                    resp.raise_for_status()
-                    with open(outfile, "wb") as f:
-                        for chunk in resp.iter_content(chunk_size=8192):
-                            f.write(chunk)
-                    size = os.path.getsize(outfile)
-                    print(f"   ✅ {date_str}: thumbnail downloaded ({size // 1024}KB)")
-                    downloaded.append((date_str, outfile, size))
-                    log_fetch({
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "feature": key, "name": name, "date": date_str,
-                        "item_id": item_id, "cloud_cover": cloud,
-                        "file": os.path.basename(outfile), "size": size,
-                        "status": "ok_thumbnail"
-                    })
-                except Exception as e2:
-                    print(f"   ❌ {date_str}: all download methods failed")
-            continue
-        time.sleep(RATE_LIMIT)
-
-        download_url = wait_for_activation(item_id)
-        if not download_url:
-            print(f"   ⚠️  {date_str}: asset activation timed out")
-            continue
-
-        outfile = os.path.join(IMAGERY_DIR, f"{key}_planet_{date_str}.png")
-        try:
-            size = download_image(download_url, outfile)
-            print(f"   ✅ {date_str}: downloaded ({size // 1024}KB)")
-            downloaded.append((date_str, outfile, size))
-
-            log_fetch({
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "feature": key,
-                "name": name,
-                "date": date_str,
-                "item_id": item_id,
-                "cloud_cover": cloud,
-                "file": os.path.basename(outfile),
-                "size": size,
-                "status": "ok"
-            })
-        except Exception as e:
-            print(f"   ❌ {date_str}: download failed — {e}")
-            log_fetch({
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "feature": key,
-                "name": name,
-                "date": date_str,
-                "item_id": item_id,
-                "status": "error",
-                "error": str(e)
-            })
+        # Skip asset activation — thumbnails only with Education/Research plan
+        # Try thumbnail directly
+        thumb_url = item.get("_links", {}).get("thumbnail")
+        if thumb_url:
+            outfile = os.path.join(IMAGERY_DIR, f"{key}_planet_{date_str}.png")
+            try:
+                resp = requests.get(thumb_url, auth=get_auth(), stream=True, timeout=30)
+                resp.raise_for_status()
+                with open(outfile, "wb") as f:
+                    for chunk in resp.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                size = os.path.getsize(outfile)
+                quality = item["properties"].get("quality_category", "?")
+                print(f"   ✅ {date_str}: thumbnail ({size // 1024}KB, {quality})")
+                downloaded.append((date_str, outfile, size))
+                log_fetch({
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "feature": key, "name": name, "date": date_str,
+                    "item_id": item_id, "cloud_cover": cloud,
+                    "file": os.path.basename(outfile), "size": size,
+                    "quality": quality,
+                    "status": "ok_thumbnail"
+                })
+            except Exception as e:
+                print(f"   ⚠️  {date_str}: thumbnail failed — {e}")
+        else:
+            print(f"   ⚠️  {date_str}: no thumbnail available")
 
         time.sleep(RATE_LIMIT)
 
