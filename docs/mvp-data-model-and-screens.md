@@ -156,6 +156,12 @@ Show:
 - pending review flag
 - recent Planet imagery flag
 
+Derived field semantics:
+- `counts.scenes` / `counts.trafficObservations` = lifetime totals currently materialized in the repo
+- `counts.recentScenes72h` = imagery seen in the last 72 hours
+- `counts.recentTraffic24h` = traffic observations seen in the last 24 hours
+- `flags.hasRecentPlanetImagery` = at least one Planet scene in the last 72 hours, not merely historical presence
+
 Filters:
 - group (Spratly / Paracel)
 - claimant
@@ -196,6 +202,11 @@ Show:
 - rate limit / auth failures
 - number of pending or failed downloads
 - secret/config status without exposing secret values
+
+Current export contract:
+- `derived/source_health.json` reports `latestSceneAt` per imagery source when known
+- Planet health includes `configured`, `latestFetchAt`, `sceneCount`, `recentSceneCount72h`, `changeCount`, and `pendingChangeCount`
+- traffic health includes `latestObservationAt`, total observations, and `recentObservationCount24h`
 
 ## Suggested Near-Term API Shapes
 

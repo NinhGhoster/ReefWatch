@@ -101,6 +101,11 @@ reefwatch/
 
 This gives ReefWatch a review/UI-friendly shape without changing the existing collection scripts. It now also emits `derived/feature_status.jsonl` for the feature-list screen, `derived/overview.json` for the daily-brief screen, `derived/review_queue.json` for the change-triage screen, and `derived/notes.jsonl` for analyst notes when present. The source health export is secret-safe: it only reports whether `PLANET_API_KEY` is configured from the environment or local `.env`, never the key value.
 
+Recent-activity fields are now explicitly windowed so the UI can distinguish historical coverage from fresh signals:
+- imagery recency = last 72 hours
+- traffic recency = last 24 hours
+- `flags.hasRecentPlanetImagery` only turns on for Planet scenes inside the recent imagery window
+
 ## Limitations
 
 - OpenSky free tier: rate-limited (42 requests/10s), limited military coverage

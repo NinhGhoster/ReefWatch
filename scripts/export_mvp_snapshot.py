@@ -27,7 +27,7 @@ import json
 import os
 import re
 from collections import Counter, defaultdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -59,10 +59,36 @@ PRIORITY_1_KEYS = {
 }
 
 SCENE_PATTERN = re.compile(r"^(?P<key>.+?)_(?P<source>planet|sentinel2|modis)_(?P<date>\d{4}-\d{2}-\d{2})\.(?:png|jpg|jpeg|tif|tiff)$")
+RECENT_SCENE_WINDOW = timedelta(hours=72)
+RECENT_TRAFFIC_WINDOW = timedelta(hours=24)
+
+
+def now_utc() -> datetime:
+    return datetime.now(UTC)
 
 
 def now_iso() -> str:
-    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return now_utc().replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_timestamp(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    normalized = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
+
+
+def is_recent(value: str | None, window: timedelta) -> bool:
+    parsed = parse_timestamp(value)
+    if not parsed:
+        return False
+    return parsed >= now_utc() - window
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -335,15 +361,18 @@ def export_feature_status(
     notes: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     latest_scene_by_feature: dict[str, dict[str, Any]] = {}
+    scene_count_by_feature: defaultdict[str, int] = defaultdict(int)
     recent_scene_count_by_feature: defaultdict[str, int] = defaultdict(int)
     has_recent_planet_by_feature: defaultdict[str, bool] = defaultdict(bool)
     for scene in sorted(scenes, key=lambda row: row.get("capturedAt", ""), reverse=True):
         feature_id = scene["featureId"]
         if feature_id not in latest_scene_by_feature:
             latest_scene_by_feature[feature_id] = scene
-        recent_scene_count_by_feature[feature_id] += 1
-        if scene.get("source") == "planet":
-            has_recent_planet_by_feature[feature_id] = True
+        scene_count_by_feature[feature_id] += 1
+        if is_recent(scene.get("capturedAt"), RECENT_SCENE_WINDOW):
+            recent_scene_count_by_feature[feature_id] += 1
+            if scene.get("source") == "planet":
+                has_recent_planet_by_feature[feature_id] = True
 
     latest_change_by_feature: dict[str, dict[str, Any]] = {}
     pending_change_count_by_feature: defaultdict[str, int] = defaultdict(int)
@@ -355,12 +384,15 @@ def export_feature_status(
             pending_change_count_by_feature[feature_id] += 1
 
     latest_traffic_by_feature: dict[str, dict[str, Any]] = {}
+    traffic_count_by_feature: defaultdict[str, int] = defaultdict(int)
     recent_traffic_count_by_feature: defaultdict[str, int] = defaultdict(int)
     for observation in sorted(traffic, key=lambda row: row.get("capturedAt", ""), reverse=True):
         feature_id = observation["featureId"]
         if feature_id not in latest_traffic_by_feature:
             latest_traffic_by_feature[feature_id] = observation
-        recent_traffic_count_by_feature[feature_id] += 1
+        traffic_count_by_feature[feature_id] += 1
+        if is_recent(observation.get("capturedAt"), RECENT_TRAFFIC_WINDOW):
+            recent_traffic_count_by_feature[feature_id] += 1
 
     latest_note_by_feature: dict[str, dict[str, Any]] = {}
     for note in sorted(notes, key=lambda row: row.get("createdAt", ""), reverse=True):
@@ -412,9 +444,11 @@ def export_feature_status(
                     "hasTraffic": recent_traffic_count_by_feature[feature_id] > 0,
                 },
                 "counts": {
-                    "scenes": recent_scene_count_by_feature[feature_id],
+                    "scenes": scene_count_by_feature[feature_id],
+                    "recentScenes72h": recent_scene_count_by_feature[feature_id],
                     "pendingChanges": pending_change_count_by_feature[feature_id],
-                    "trafficObservations": recent_traffic_count_by_feature[feature_id],
+                    "trafficObservations": traffic_count_by_feature[feature_id],
+                    "recentTraffic24h": recent_traffic_count_by_feature[feature_id],
                 },
             }
         )
@@ -498,22 +532,36 @@ def export_overview(
     feature_status: list[dict[str, Any]],
     review_queue: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    recent_scenes = sorted(scenes, key=lambda row: row.get("capturedAt", ""), reverse=True)[:10]
+    recent_scenes = [
+        row
+        for row in sorted(scenes, key=lambda row: row.get("capturedAt", ""), reverse=True)
+        if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW)
+    ][:10]
     pending_changes = [row for row in changes if row.get("reviewStatus") == "pending"]
-    recent_traffic = traffic[:10]
+    recent_traffic = [row for row in traffic if is_recent(row.get("capturedAt"), RECENT_TRAFFIC_WINDOW)][:10]
     payload = {
         "generatedAt": now_iso(),
         "counts": {
             "features": len(features),
             "priority1Features": sum(1 for feature in features if feature["priority"] == 1),
             "scenes": len(scenes),
+            "recentScenes72h": sum(1 for scene in scenes if is_recent(scene.get("capturedAt"), RECENT_SCENE_WINDOW)),
             "changes": len(changes),
             "pendingChanges": len(pending_changes),
             "trafficObservations": len(traffic),
+            "recentTraffic24h": sum(1 for row in traffic if is_recent(row.get("capturedAt"), RECENT_TRAFFIC_WINDOW)),
             "notes": len(notes),
         },
         "reviewQueue": review_queue[:10],
-        "featureStatus": feature_status[:10],
+        "featureStatus": sorted(
+            feature_status,
+            key=lambda row: (
+                not row["flags"]["hasPendingReview"],
+                row["priority"],
+                -row["counts"].get("recentScenes72h", 0),
+                row["name"],
+            ),
+        )[:10],
         "recentScenes": recent_scenes,
         "recentTraffic": recent_traffic,
         "recentNotes": notes[:10],
@@ -529,6 +577,9 @@ def export_source_health(
     traffic: list[dict[str, Any]],
 ) -> dict[str, Any]:
     source_counts = Counter(scene["source"] for scene in scenes)
+    scenes_by_source: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    for scene in scenes:
+        scenes_by_source[scene["source"]].append(scene)
     planet_key_present = has_configured_secret(BASE_DIR, "PLANET_API_KEY")
     payload = {
         "generatedAt": now_iso(),
@@ -541,26 +592,35 @@ def export_source_health(
                 "configured": planet_key_present,
                 "secretSafe": True,
                 "latestFetchAt": latest_timestamp(load_jsonl(PLANET_FETCH_LOG)),
+                "latestSceneAt": latest_timestamp(scenes_by_source.get("planet", []), keys=("capturedAt", "publishedDate")),
                 "sceneCount": source_counts.get("planet", 0),
-                "changeCount": len(changes),
+                "recentSceneCount72h": sum(1 for row in scenes_by_source.get("planet", []) if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW)),
+                "changeCount": sum(1 for row in changes if row.get("source") == "planet"),
+                "pendingChangeCount": sum(1 for row in changes if row.get("source") == "planet" and row.get("reviewStatus") == "pending"),
                 "status": "ready" if planet_key_present else "missing_config",
             },
             "sentinel2": {
                 "configured": True,
                 "secretSafe": True,
+                "latestSceneAt": latest_timestamp(scenes_by_source.get("sentinel2", []), keys=("capturedAt", "publishedDate")),
                 "sceneCount": source_counts.get("sentinel2", 0),
+                "recentSceneCount72h": sum(1 for row in scenes_by_source.get("sentinel2", []) if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW)),
                 "status": "ready",
             },
             "modis": {
                 "configured": True,
                 "secretSafe": True,
+                "latestSceneAt": latest_timestamp(scenes_by_source.get("modis", []), keys=("capturedAt", "publishedDate")),
                 "sceneCount": source_counts.get("modis", 0),
+                "recentSceneCount72h": sum(1 for row in scenes_by_source.get("modis", []) if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW)),
                 "status": "ready",
             },
             "traffic": {
                 "configured": True,
                 "secretSafe": True,
+                "latestObservationAt": latest_timestamp(traffic, keys=("capturedAt", "timestamp", "time")),
                 "observationCount": len(traffic),
+                "recentObservationCount24h": sum(1 for row in traffic if is_recent(row.get("capturedAt"), RECENT_TRAFFIC_WINDOW)),
                 "status": "ready",
             },
         },
@@ -569,8 +629,14 @@ def export_source_health(
     return payload
 
 
-def latest_timestamp(rows: list[dict[str, Any]]) -> str | None:
-    stamps = [row.get("timestamp") or row.get("time") for row in rows if row.get("timestamp") or row.get("time")]
+def latest_timestamp(rows: list[dict[str, Any]], keys: tuple[str, ...] = ("timestamp", "time")) -> str | None:
+    stamps = []
+    for row in rows:
+        for key in keys:
+            value = row.get(key)
+            if value:
+                stamps.append(value)
+                break
     if not stamps:
         return None
     return sorted(stamps)[-1]
