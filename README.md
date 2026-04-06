@@ -98,7 +98,7 @@ reefwatch/
 - `derived/traffic.jsonl`
 - `derived/source_health.json`
 
-This gives ReefWatch a review/UI-friendly shape without changing the existing collection scripts. It now also emits `derived/overview.json` for the daily-brief screen and `derived/notes.jsonl` for analyst notes when present. The source health export is secret-safe: it only reports whether `PLANET_API_KEY` is configured from the environment or local `.env`, never the key value.
+This gives ReefWatch a review/UI-friendly shape without changing the existing collection scripts. It now also emits `derived/feature_status.jsonl` for the feature-list screen, `derived/overview.json` for the daily-brief screen, and `derived/notes.jsonl` for analyst notes when present. The source health export is secret-safe: it only reports whether `PLANET_API_KEY` is configured from the environment or local `.env`, never the key value.
 
 ## Limitations
 

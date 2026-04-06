@@ -116,12 +116,14 @@ Human context layered on top of detections.
 - `derived/changes.jsonl` stores candidate/confirmed changes
 - `derived/traffic.jsonl` stores normalized traffic observations
 - `derived/notes.jsonl` stores analyst notes
+- `derived/feature_status.jsonl` stores one app-facing summary row per feature for list/triage screens
 - `derived/source_health.json` stores secret-safe ingest/config health
 
 Current repo bridge: `python3 scripts/export_mvp_snapshot.py` builds the `derived/` layer from existing script outputs without exposing secret values.
 
 Additional bridge outputs:
 - `derived/overview.json` — daily-brief friendly summary for the Overview screen
+- `derived/feature_status.jsonl` — feature list / inbox-style summary with latest scene, latest change, latest traffic, and pending-review flags
 - `derived/notes.jsonl` — normalized analyst notes when `analyst_notes.jsonl` exists
 
 ## MVP Screens
@@ -140,13 +142,17 @@ Show:
 
 Purpose: browse and filter monitored features
 
+Backed by: `derived/feature_status.jsonl`
+
 Show:
 - feature name
 - claimant
 - priority
-- latest imagery date
+- latest imagery date/source
 - latest change status
 - recent traffic indicator
+- pending review flag
+- recent Planet imagery flag
 
 Filters:
 - group (Spratly / Paracel)

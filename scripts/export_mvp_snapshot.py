@@ -12,6 +12,7 @@ Outputs (all under derived/):
 - changes.jsonl
 - traffic.jsonl
 - notes.jsonl
+- feature_status.jsonl
 - overview.json
 - source_health.json
 
@@ -24,7 +25,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -323,12 +324,108 @@ def export_notes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str, A
     return rows
 
 
+def export_feature_status(
+    features: list[dict[str, Any]],
+    scenes: list[dict[str, Any]],
+    changes: list[dict[str, Any]],
+    traffic: list[dict[str, Any]],
+    notes: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    latest_scene_by_feature: dict[str, dict[str, Any]] = {}
+    recent_scene_count_by_feature: defaultdict[str, int] = defaultdict(int)
+    has_recent_planet_by_feature: defaultdict[str, bool] = defaultdict(bool)
+    for scene in sorted(scenes, key=lambda row: row.get("capturedAt", ""), reverse=True):
+        feature_id = scene["featureId"]
+        if feature_id not in latest_scene_by_feature:
+            latest_scene_by_feature[feature_id] = scene
+        recent_scene_count_by_feature[feature_id] += 1
+        if scene.get("source") == "planet":
+            has_recent_planet_by_feature[feature_id] = True
+
+    latest_change_by_feature: dict[str, dict[str, Any]] = {}
+    pending_change_count_by_feature: defaultdict[str, int] = defaultdict(int)
+    for change in sorted(changes, key=lambda row: row.get("detectedAt", ""), reverse=True):
+        feature_id = change["featureId"]
+        if feature_id not in latest_change_by_feature:
+            latest_change_by_feature[feature_id] = change
+        if change.get("reviewStatus") == "pending":
+            pending_change_count_by_feature[feature_id] += 1
+
+    latest_traffic_by_feature: dict[str, dict[str, Any]] = {}
+    recent_traffic_count_by_feature: defaultdict[str, int] = defaultdict(int)
+    for observation in sorted(traffic, key=lambda row: row.get("capturedAt", ""), reverse=True):
+        feature_id = observation["featureId"]
+        if feature_id not in latest_traffic_by_feature:
+            latest_traffic_by_feature[feature_id] = observation
+        recent_traffic_count_by_feature[feature_id] += 1
+
+    latest_note_by_feature: dict[str, dict[str, Any]] = {}
+    for note in sorted(notes, key=lambda row: row.get("createdAt", ""), reverse=True):
+        feature_id = note["featureId"]
+        if feature_id not in latest_note_by_feature:
+            latest_note_by_feature[feature_id] = note
+
+    rows = []
+    for feature in sorted(features, key=lambda row: (row["priority"], row["name"])):
+        feature_id = feature["id"]
+        latest_scene = latest_scene_by_feature.get(feature_id)
+        latest_change = latest_change_by_feature.get(feature_id)
+        latest_observation = latest_traffic_by_feature.get(feature_id)
+        latest_note = latest_note_by_feature.get(feature_id)
+        rows.append(
+            {
+                "featureId": feature_id,
+                "featureKey": feature["key"],
+                "name": feature["name"],
+                "group": feature["group"],
+                "claimant": feature["claimant"],
+                "priority": feature["priority"],
+                "tags": feature["tags"],
+                "latestScene": {
+                    "capturedAt": latest_scene.get("capturedAt") if latest_scene else None,
+                    "source": latest_scene.get("source") if latest_scene else None,
+                    "sceneId": latest_scene.get("id") if latest_scene else None,
+                },
+                "latestChange": {
+                    "detectedAt": latest_change.get("detectedAt") if latest_change else None,
+                    "classification": latest_change.get("classification") if latest_change else None,
+                    "reviewStatus": latest_change.get("reviewStatus") if latest_change else None,
+                    "changeId": latest_change.get("id") if latest_change else None,
+                },
+                "latestTraffic": {
+                    "capturedAt": latest_observation.get("capturedAt") if latest_observation else None,
+                    "domain": latest_observation.get("domain") if latest_observation else None,
+                    "source": latest_observation.get("source") if latest_observation else None,
+                    "observationId": latest_observation.get("id") if latest_observation else None,
+                },
+                "latestNote": {
+                    "createdAt": latest_note.get("createdAt") if latest_note else None,
+                    "kind": latest_note.get("kind") if latest_note else None,
+                    "noteId": latest_note.get("id") if latest_note else None,
+                },
+                "flags": {
+                    "hasPendingReview": pending_change_count_by_feature[feature_id] > 0,
+                    "hasRecentPlanetImagery": has_recent_planet_by_feature[feature_id],
+                    "hasTraffic": recent_traffic_count_by_feature[feature_id] > 0,
+                },
+                "counts": {
+                    "scenes": recent_scene_count_by_feature[feature_id],
+                    "pendingChanges": pending_change_count_by_feature[feature_id],
+                    "trafficObservations": recent_traffic_count_by_feature[feature_id],
+                },
+            }
+        )
+    write_jsonl(DERIVED_DIR / "feature_status.jsonl", rows)
+    return rows
+
+
 def export_overview(
     features: list[dict[str, Any]],
     scenes: list[dict[str, Any]],
     changes: list[dict[str, Any]],
     traffic: list[dict[str, Any]],
     notes: list[dict[str, Any]],
+    feature_status: list[dict[str, Any]],
 ) -> dict[str, Any]:
     recent_scenes = sorted(scenes, key=lambda row: row.get("capturedAt", ""), reverse=True)[:10]
     pending_changes = [row for row in changes if row.get("reviewStatus") == "pending"]
@@ -345,6 +442,7 @@ def export_overview(
             "notes": len(notes),
         },
         "reviewQueue": pending_changes[:10],
+        "featureStatus": feature_status[:10],
         "recentScenes": recent_scenes,
         "recentTraffic": recent_traffic,
         "recentNotes": notes[:10],
@@ -439,8 +537,11 @@ def main() -> None:
     changes = export_changes(features_by_key)
     traffic = export_traffic(features_by_key)
     notes = export_notes(features_by_key)
-    overview = export_overview(features, scenes, changes, traffic, notes)
+    feature_status = export_feature_status(features, scenes, changes, traffic, notes)
+    overview = export_overview(features, scenes, changes, traffic, notes, feature_status)
     health = export_source_health(features, scenes, changes, traffic)
+
+    assert len(feature_status) == len(features), "feature_status should include every feature"
 
     print("Exported MVP snapshot:")
     print(f"- features: {len(features)}")
@@ -448,6 +549,7 @@ def main() -> None:
     print(f"- changes: {len(changes)}")
     print(f"- traffic observations: {len(traffic)}")
     print(f"- notes: {len(notes)}")
+    print(f"- feature status rows: {len(feature_status)}")
     print(f"- pending review: {overview['counts']['pendingChanges']}")
     print(f"- planet configured: {health['sources']['planet']['configured']}")
     print(f"- output dir: {DERIVED_DIR}")
