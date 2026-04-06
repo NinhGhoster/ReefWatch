@@ -163,6 +163,7 @@ def main() -> int:
     assert_no_secret_strings(source_health, "source_health.json")
     assert_no_secret_strings(overview, "overview.json")
     assert_no_secret_strings(review_queue, "review_queue.json")
+    assert_no_secret_strings(changes, "changes.jsonl")
 
     feature_ids = {row["id"] for row in features}
     for idx, row in enumerate(scenes, start=1):

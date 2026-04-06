@@ -61,6 +61,19 @@ PRIORITY_1_KEYS = {
 SCENE_PATTERN = re.compile(r"^(?P<key>.+?)_(?P<source>planet|sentinel2|modis)_(?P<date>\d{4}-\d{2}-\d{2})\.(?:png|jpg|jpeg|tif|tiff)$")
 RECENT_SCENE_WINDOW = timedelta(hours=72)
 RECENT_TRAFFIC_WINDOW = timedelta(hours=24)
+SECRET_KEY_MARKERS = (
+    "api_key",
+    "planet_api_key",
+    "authorization",
+    "auth",
+    "token",
+    "password",
+    "secret",
+)
+SECRET_VALUE_MARKERS = (
+    "basic ",
+    "bearer ",
+)
 
 
 def now_utc() -> datetime:
@@ -219,6 +232,30 @@ def export_scenes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str, 
     return rows
 
 
+def sanitize_secret_safe(value: Any, key_hint: str | None = None) -> Any:
+    if isinstance(value, dict):
+        cleaned: dict[str, Any] = {}
+        for key, child in value.items():
+            lowered = key.lower()
+            if any(marker in lowered for marker in SECRET_KEY_MARKERS):
+                continue
+            cleaned[key] = sanitize_secret_safe(child, key_hint=key)
+        return cleaned
+
+    if isinstance(value, list):
+        return [sanitize_secret_safe(item, key_hint=key_hint) for item in value]
+
+    if isinstance(value, str):
+        lowered = value.lower()
+        if any(marker in lowered for marker in SECRET_VALUE_MARKERS):
+            return "[redacted]"
+        if key_hint and any(marker in key_hint.lower() for marker in SECRET_KEY_MARKERS):
+            return "[redacted]"
+        return value
+
+    return value
+
+
 def export_changes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for raw in load_jsonl(PLANET_CHANGES):
@@ -245,7 +282,7 @@ def export_changes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str,
                     "brightnessChangePct": raw.get("brightness_change_pct"),
                 },
                 "reviewStatus": "pending" if raw.get("changed") else "dismissed",
-                "raw": {k: v for k, v in raw.items() if k not in {"api_key", "PLANET_API_KEY"}},
+                "raw": sanitize_secret_safe(raw),
             }
         )
     write_jsonl(DERIVED_DIR / "changes.jsonl", rows)

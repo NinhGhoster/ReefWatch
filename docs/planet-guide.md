@@ -118,6 +118,7 @@ If a higher-tier Planet plan is later confirmed, document that separately instea
 - **Quality control**: optional `PLANET_QUALITY=standard|test` is loaded from env or local `.env` and applied directly to Planet search filters
 - **Security**: No real key should be committed to the repo; `.env` is gitignored
 - **Operational rule**: secret/config health should only report whether a key is configured, never the key value itself
+- **Export safety rule**: any app-facing export or debug payload derived from Planet logs must strip or redact auth-like fields (`api_key`, `authorization`, `token`, `secret`, etc.) before writing to `derived/`
 - **Dependencies**: `requests`, `numpy`, `Pillow`, `scikit-image`
 
 ## Integration
