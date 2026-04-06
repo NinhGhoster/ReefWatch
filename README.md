@@ -47,6 +47,9 @@ python3 scripts/improved_ship_monitor.py
 
 # Historical imagery status
 python3 scripts/historical_imagery.py --status
+
+# Export app-facing MVP snapshot into derived/
+python3 scripts/export_mvp_snapshot.py
 ```
 
 ## Project Structure
@@ -84,6 +87,18 @@ reefwatch/
 - 🇵🇭 Philippines (9 features)
 - 🇲🇾 Malaysia (9 features)
 - 🇹🇼 Taiwan (2 features)
+
+## MVP Snapshot Export
+
+`python3 scripts/export_mvp_snapshot.py` materializes the current script outputs into a stable `derived/` layer:
+
+- `derived/features.jsonl`
+- `derived/scenes.jsonl`
+- `derived/changes.jsonl`
+- `derived/traffic.jsonl`
+- `derived/source_health.json`
+
+This gives ReefWatch a review/UI-friendly shape without changing the existing collection scripts. The source health export is secret-safe: it only reports whether `PLANET_API_KEY` is configured, never the key value.
 
 ## Limitations
 

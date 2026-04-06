@@ -111,10 +111,14 @@ Human context layered on top of detections.
 
 - `data/target_features.json` stays the canonical feature seed
 - `imagery_history/` stores source image artifacts
+- `derived/features.jsonl` stores normalized feature records
 - `derived/scenes.jsonl` stores normalized scene records
 - `derived/changes.jsonl` stores candidate/confirmed changes
 - `derived/traffic.jsonl` stores normalized traffic observations
 - `derived/notes.jsonl` stores analyst notes
+- `derived/source_health.json` stores secret-safe ingest/config health
+
+Current repo bridge: `python3 scripts/export_mvp_snapshot.py` builds the `derived/` layer from existing script outputs without exposing secret values.
 
 ## MVP Screens
 

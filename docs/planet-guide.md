@@ -120,3 +120,11 @@ If a higher-tier Planet plan is later confirmed, document that separately instea
 Planet imagery stats appear in the daily report (`scripts/run_daily_report.py`) alongside
 NASA Worldview and aircraft detections. Configuration is in `data/monitoring_config.json`
 under `monitoring.imagery.sources.planet_labs`.
+
+For the MVP app/export layer, run:
+
+```bash
+python3 scripts/export_mvp_snapshot.py
+```
+
+This emits `derived/source_health.json`, which reports Planet config status in a secret-safe way (`configured: true/false`) without ever writing the key value.
