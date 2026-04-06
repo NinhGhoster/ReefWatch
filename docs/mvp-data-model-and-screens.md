@@ -120,6 +120,10 @@ Human context layered on top of detections.
 
 Current repo bridge: `python3 scripts/export_mvp_snapshot.py` builds the `derived/` layer from existing script outputs without exposing secret values.
 
+Additional bridge outputs:
+- `derived/overview.json` — daily-brief friendly summary for the Overview screen
+- `derived/notes.jsonl` — normalized analyst notes when `analyst_notes.jsonl` exists
+
 ## MVP Screens
 
 ### 1. Overview / Daily Brief
@@ -189,6 +193,8 @@ Show:
 - `GET /features/:id/scenes`
 - `GET /features/:id/changes`
 - `GET /review-queue`
+- `GET /notes`
+- `GET /overview`
 - `GET /source-health`
 
 ## Why This Model

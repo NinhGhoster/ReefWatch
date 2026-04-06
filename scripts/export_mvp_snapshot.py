@@ -11,6 +11,8 @@ Outputs (all under derived/):
 - scenes.jsonl
 - changes.jsonl
 - traffic.jsonl
+- notes.jsonl
+- overview.json
 - source_health.json
 
 Usage:
@@ -35,6 +37,7 @@ DERIVED_DIR = BASE_DIR / "derived"
 TARGET_FEATURES = DATA_DIR / "target_features.json"
 PLANET_CHANGES = BASE_DIR / "planet_changes.jsonl"
 PLANET_FETCH_LOG = BASE_DIR / "planet_fetch_log.jsonl"
+ANALYST_NOTES_LOG = BASE_DIR / "analyst_notes.jsonl"
 AIRCRAFT_LOGS = [
     BASE_DIR / "aircraft_detections.jsonl",
     BASE_DIR / "detections.jsonl",
@@ -296,6 +299,60 @@ def export_traffic(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str,
     return rows
 
 
+def export_notes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    rows = []
+    for idx, raw in enumerate(load_jsonl(ANALYST_NOTES_LOG), start=1):
+        feature_key = raw.get("feature") or raw.get("feature_key")
+        if feature_key not in features_by_key:
+            continue
+        created_at = raw.get("createdAt") or raw.get("timestamp") or now_iso()
+        rows.append(
+            {
+                "id": raw.get("id") or f"note:{feature_key}:{created_at}:{idx:02d}",
+                "featureId": f"feature:{feature_key}",
+                "createdAt": created_at,
+                "author": raw.get("author", "analyst"),
+                "kind": raw.get("kind", "assessment"),
+                "text": raw.get("text") or raw.get("note") or "",
+                "source": raw.get("source", "manual"),
+                "relatedChangeId": raw.get("relatedChangeId") or raw.get("related_change_id"),
+            }
+        )
+    rows.sort(key=lambda row: row.get("createdAt", ""), reverse=True)
+    write_jsonl(DERIVED_DIR / "notes.jsonl", rows)
+    return rows
+
+
+def export_overview(
+    features: list[dict[str, Any]],
+    scenes: list[dict[str, Any]],
+    changes: list[dict[str, Any]],
+    traffic: list[dict[str, Any]],
+    notes: list[dict[str, Any]],
+) -> dict[str, Any]:
+    recent_scenes = sorted(scenes, key=lambda row: row.get("capturedAt", ""), reverse=True)[:10]
+    pending_changes = [row for row in changes if row.get("reviewStatus") == "pending"]
+    recent_traffic = traffic[:10]
+    payload = {
+        "generatedAt": now_iso(),
+        "counts": {
+            "features": len(features),
+            "priority1Features": sum(1 for feature in features if feature["priority"] == 1),
+            "scenes": len(scenes),
+            "changes": len(changes),
+            "pendingChanges": len(pending_changes),
+            "trafficObservations": len(traffic),
+            "notes": len(notes),
+        },
+        "reviewQueue": pending_changes[:10],
+        "recentScenes": recent_scenes,
+        "recentTraffic": recent_traffic,
+        "recentNotes": notes[:10],
+    }
+    write_json(DERIVED_DIR / "overview.json", payload)
+    return payload
+
+
 def export_source_health(
     features: list[dict[str, Any]],
     scenes: list[dict[str, Any]],
@@ -356,6 +413,8 @@ def main() -> None:
     scenes = export_scenes(features_by_key)
     changes = export_changes(features_by_key)
     traffic = export_traffic(features_by_key)
+    notes = export_notes(features_by_key)
+    overview = export_overview(features, scenes, changes, traffic, notes)
     health = export_source_health(features, scenes, changes, traffic)
 
     print("Exported MVP snapshot:")
@@ -363,6 +422,8 @@ def main() -> None:
     print(f"- scenes: {len(scenes)}")
     print(f"- changes: {len(changes)}")
     print(f"- traffic observations: {len(traffic)}")
+    print(f"- notes: {len(notes)}")
+    print(f"- pending review: {overview['counts']['pendingChanges']}")
     print(f"- planet configured: {health['sources']['planet']['configured']}")
     print(f"- output dir: {DERIVED_DIR}")
 

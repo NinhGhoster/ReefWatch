@@ -7,7 +7,7 @@ South China Sea satellite monitoring system — tracking construction, aircraft,
 - **Satellite Imagery** — NASA Worldview (MODIS Terra, 250m) with daily change detection
 - **Aircraft Tracking** — OpenSky Network multi-source with per-feature bounding boxes
 - **Ship Monitoring** — AIS URL generation for MarineTraffic/VesselFinder
-- **Historical Backfill** — 90-day imagery archive (Jan–Apr 2026) for all 79 SCS features
+- **Historical Backfill** — 90-day imagery archive (Jan–Apr 2026) for all 77 monitored SCS features
 - **Per-Feature Scanning** — Each island/reef gets its own bounding box for precise detection
 
 ## Data Sources
@@ -86,7 +86,7 @@ reefwatch/
 - 🇻🇳 Vietnam (30 features)  
 - 🇵🇭 Philippines (9 features)
 - 🇲🇾 Malaysia (9 features)
-- 🇹🇼 Taiwan (2 features)
+- 🇹🇼 Taiwan (1 feature)
 
 ## MVP Snapshot Export
 
@@ -98,7 +98,7 @@ reefwatch/
 - `derived/traffic.jsonl`
 - `derived/source_health.json`
 
-This gives ReefWatch a review/UI-friendly shape without changing the existing collection scripts. The source health export is secret-safe: it only reports whether `PLANET_API_KEY` is configured, never the key value.
+This gives ReefWatch a review/UI-friendly shape without changing the existing collection scripts. It now also emits `derived/overview.json` for the daily-brief screen and `derived/notes.jsonl` for analyst notes when present. The source health export is secret-safe: it only reports whether `PLANET_API_KEY` is configured, never the key value.
 
 ## Limitations
 
