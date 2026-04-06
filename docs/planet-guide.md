@@ -127,4 +127,4 @@ For the MVP app/export layer, run:
 python3 scripts/export_mvp_snapshot.py
 ```
 
-This emits `derived/source_health.json`, which reports Planet config status in a secret-safe way (`configured: true/false`) without ever writing the key value.
+This emits `derived/source_health.json`, which reports Planet config status in a secret-safe way (`configured: true/false`) by checking the current environment and local `.env`, without ever writing the key value.

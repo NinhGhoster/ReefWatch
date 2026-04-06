@@ -360,7 +360,7 @@ def export_source_health(
     traffic: list[dict[str, Any]],
 ) -> dict[str, Any]:
     source_counts = Counter(scene["source"] for scene in scenes)
-    planet_key_present = bool(os.environ.get("PLANET_API_KEY", "").strip())
+    planet_key_present = has_configured_secret("PLANET_API_KEY")
     payload = {
         "generatedAt": now_iso(),
         "features": {
@@ -405,6 +405,31 @@ def latest_timestamp(rows: list[dict[str, Any]]) -> str | None:
     if not stamps:
         return None
     return sorted(stamps)[-1]
+
+
+def read_local_env_value(key: str) -> str | None:
+    env_path = BASE_DIR / ".env"
+    if not env_path.is_file():
+        return None
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        current_key, value = line.split("=", 1)
+        if current_key.strip() != key:
+            continue
+        cleaned = value.strip().strip('"').strip("'")
+        return cleaned or None
+    return None
+
+
+def has_configured_secret(key: str) -> bool:
+    env_value = os.environ.get(key, "").strip()
+    if env_value:
+        return True
+    local_value = read_local_env_value(key)
+    return bool(local_value and not local_value.lower().startswith("your_"))
 
 
 def main() -> None:
