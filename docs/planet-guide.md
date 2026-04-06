@@ -3,8 +3,14 @@
 ## Overview
 
 Planet Labs provides 3-5m resolution optical imagery via their PSScene product (8-band multispectral).
-The visual asset gives a ready-to-use PNG composite. Higher resolution than Sentinel-2 (10m) and
-NASA Worldview (250m), making it ideal for detecting construction, vessels, and land reclamation.
+For the current ReefWatch workflow, treat Planet as an **optional enrichment source** layered on top of free imagery.
+The repo currently supports **search + thumbnail download** safely; do not assume full-resolution asset access.
+
+**Current supported path in repo:**
+- search PSScene scenes via Data API
+- download thumbnail imagery when available
+- run local change detection over saved thumbnails
+- keep all auth local via environment or `.env` only
 
 **API:** `https://api.planet.com/data/v1`
 **Item type:** PSScene (3-5m, 8-band multispectral)
@@ -75,11 +81,18 @@ The 5 priority test features:
 
 ## API Workflow
 
+### Current repo workflow (implemented)
+
 1. **Search**: POST `/data/v1/quick-search` with geometry, date range, and cloud filter
-2. **Select**: Pick best image per day (lowest cloud cover)
-3. **Activate**: POST to asset's activate URL (visual asset)
-4. **Wait**: Poll asset status until `active` (may take minutes)
-5. **Download**: GET the asset location URL → save as PNG
+2. **Select**: Pick best image per day (prefer standard quality, then lowest cloud cover)
+3. **Download thumbnail**: use the scene `_links.thumbnail` URL when present
+4. **Save locally**: write `{feature_key}_planet_{date}.png` to `imagery_history/`
+5. **Compare**: run `planet_change_detection.py` on saved thumbnails
+
+### Deferred / plan-dependent workflow
+
+Asset activation and full-resolution downloads should be treated as plan-dependent and not assumed by default.
+If a higher-tier Planet plan is later confirmed, document that separately instead of overloading the thumbnail path.
 
 ## Rate Limits
 
@@ -99,6 +112,7 @@ The 5 priority test features:
 - **API Key**: Set `PLANET_API_KEY` in the environment or a local `.env` file
 - **Template**: Copy `.env.example` → `.env` and fill in your local key
 - **Security**: No real key should be committed to the repo; `.env` is gitignored
+- **Operational rule**: secret/config health should only report whether a key is configured, never the key value itself
 - **Dependencies**: `requests`, `numpy`, `Pillow`, `scikit-image`
 
 ## Integration

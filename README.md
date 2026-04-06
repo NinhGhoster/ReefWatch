@@ -91,7 +91,7 @@ reefwatch/
 - ADSB.fi: sparse receivers over open ocean
 - Ships: requires paid AIS API for live data
 - Free imagery sources are lower resolution than commercial tasking products
-- Planet integration requires a locally configured `PLANET_API_KEY` and should never rely on committed secrets
+- Planet integration is thumbnail-first for now, requires a locally configured `PLANET_API_KEY`, and should never rely on committed secrets
 
 ## License
 

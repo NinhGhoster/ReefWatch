@@ -140,7 +140,11 @@ def generate_report(hours=24, date_filter=None):
     cloud_affected = [r for r in imagery if r.get("cloud_interference")]
 
     # Planet analysis
-    planet_fetched = [r for r in planet_fetches if r.get("status") == "ok"]
+    # Accept both the newer thumbnail-only fetch status and any legacy generic success status.
+    planet_fetched = [
+        r for r in planet_fetches
+        if r.get("status") in {"ok", "ok_thumbnail"}
+    ]
     planet_changed = [r for r in planet_changes if r.get("changed")]
 
     # Aircraft analysis
