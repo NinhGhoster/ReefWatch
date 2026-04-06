@@ -205,8 +205,9 @@ Show:
 
 Current export contract:
 - `derived/source_health.json` reports `latestSceneAt` per imagery source when known
-- Planet health includes `configured`, `latestFetchAt`, `sceneCount`, `recentSceneCount72h`, `changeCount`, and `pendingChangeCount`
-- traffic health includes `latestObservationAt`, total observations, and `recentObservationCount24h`
+- Planet health includes `configured`, `qualityPreference`, `latestFetchAt`, `sceneCount`, `recentSceneCount72h`, feature coverage counts, `changeCount`, and `pendingChangeCount`
+- source `status` is explicit: `missing_config`, `configured_no_data`, `stale`, or `ready`
+- traffic health includes `latestObservationAt`, total observations, recent-observation counts, and feature-coverage counts
 
 ## Suggested Near-Term API Shapes
 

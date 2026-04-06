@@ -614,6 +614,31 @@ def export_overview(
     return payload
 
 
+def summarize_source_scene_coverage(rows: list[dict[str, Any]]) -> dict[str, int]:
+    feature_ids = {row.get("featureId") for row in rows if row.get("featureId")}
+    recent_feature_ids = {
+        row.get("featureId")
+        for row in rows
+        if row.get("featureId") and is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW)
+    }
+    return {
+        "featuresWithScenes": len(feature_ids),
+        "featuresWithRecentScenes72h": len(recent_feature_ids),
+    }
+
+
+
+def source_status(configured: bool, total_count: int, recent_count: int) -> str:
+    if not configured:
+        return "missing_config"
+    if total_count == 0:
+        return "configured_no_data"
+    if recent_count == 0:
+        return "stale"
+    return "ready"
+
+
+
 def export_source_health(
     features: list[dict[str, Any]],
     scenes: list[dict[str, Any]],
@@ -625,6 +650,13 @@ def export_source_health(
     for scene in scenes:
         scenes_by_source[scene["source"]].append(scene)
     planet_key_present = has_configured_secret(BASE_DIR, "PLANET_API_KEY")
+    planet_rows = scenes_by_source.get("planet", [])
+    sentinel_rows = scenes_by_source.get("sentinel2", [])
+    modis_rows = scenes_by_source.get("modis", [])
+    recent_planet_count = sum(1 for row in planet_rows if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW))
+    recent_sentinel_count = sum(1 for row in sentinel_rows if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW))
+    recent_modis_count = sum(1 for row in modis_rows if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW))
+    recent_traffic_count = sum(1 for row in traffic if is_recent(row.get("capturedAt"), RECENT_TRAFFIC_WINDOW))
     payload = {
         "generatedAt": now_iso(),
         "features": {
@@ -635,37 +667,49 @@ def export_source_health(
             "planet": {
                 "configured": planet_key_present,
                 "secretSafe": True,
+                "qualityPreference": os.environ.get("PLANET_QUALITY", "standard").strip().lower() or "standard",
                 "latestFetchAt": latest_timestamp(load_jsonl(PLANET_FETCH_LOG)),
-                "latestSceneAt": latest_timestamp(scenes_by_source.get("planet", []), keys=("capturedAt", "publishedDate")),
+                "latestSceneAt": latest_timestamp(planet_rows, keys=("capturedAt", "publishedDate")),
                 "sceneCount": source_counts.get("planet", 0),
-                "recentSceneCount72h": sum(1 for row in scenes_by_source.get("planet", []) if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW)),
+                "recentSceneCount72h": recent_planet_count,
+                "coverage": summarize_source_scene_coverage(planet_rows),
                 "changeCount": sum(1 for row in changes if row.get("source") == "planet"),
                 "pendingChangeCount": sum(1 for row in changes if row.get("source") == "planet" and row.get("reviewStatus") == "pending"),
-                "status": "ready" if planet_key_present else "missing_config",
+                "status": source_status(planet_key_present, source_counts.get("planet", 0), recent_planet_count),
             },
             "sentinel2": {
                 "configured": True,
                 "secretSafe": True,
-                "latestSceneAt": latest_timestamp(scenes_by_source.get("sentinel2", []), keys=("capturedAt", "publishedDate")),
+                "latestSceneAt": latest_timestamp(sentinel_rows, keys=("capturedAt", "publishedDate")),
                 "sceneCount": source_counts.get("sentinel2", 0),
-                "recentSceneCount72h": sum(1 for row in scenes_by_source.get("sentinel2", []) if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW)),
-                "status": "ready",
+                "recentSceneCount72h": recent_sentinel_count,
+                "coverage": summarize_source_scene_coverage(sentinel_rows),
+                "status": source_status(True, source_counts.get("sentinel2", 0), recent_sentinel_count),
             },
             "modis": {
                 "configured": True,
                 "secretSafe": True,
-                "latestSceneAt": latest_timestamp(scenes_by_source.get("modis", []), keys=("capturedAt", "publishedDate")),
+                "latestSceneAt": latest_timestamp(modis_rows, keys=("capturedAt", "publishedDate")),
                 "sceneCount": source_counts.get("modis", 0),
-                "recentSceneCount72h": sum(1 for row in scenes_by_source.get("modis", []) if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW)),
-                "status": "ready",
+                "recentSceneCount72h": recent_modis_count,
+                "coverage": summarize_source_scene_coverage(modis_rows),
+                "status": source_status(True, source_counts.get("modis", 0), recent_modis_count),
             },
             "traffic": {
                 "configured": True,
                 "secretSafe": True,
                 "latestObservationAt": latest_timestamp(traffic, keys=("capturedAt", "timestamp", "time")),
                 "observationCount": len(traffic),
-                "recentObservationCount24h": sum(1 for row in traffic if is_recent(row.get("capturedAt"), RECENT_TRAFFIC_WINDOW)),
-                "status": "ready",
+                "recentObservationCount24h": recent_traffic_count,
+                "featureCoverage": {
+                    "featuresWithObservations": len({row.get("featureId") for row in traffic if row.get("featureId")}),
+                    "featuresWithRecentObservations24h": len({
+                        row.get("featureId")
+                        for row in traffic
+                        if row.get("featureId") and is_recent(row.get("capturedAt"), RECENT_TRAFFIC_WINDOW)
+                    }),
+                },
+                "status": source_status(True, len(traffic), recent_traffic_count),
             },
         },
     }
