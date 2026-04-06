@@ -462,6 +462,12 @@ def export_review_queue(
     scenes: list[dict[str, Any]],
     notes: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
+    def sortable_timestamp(value: str | None) -> float:
+        parsed = parse_timestamp(value)
+        if not parsed:
+            return float("-inf")
+        return parsed.timestamp()
+
     scenes_by_id = {scene["id"]: scene for scene in scenes}
     notes_by_feature: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
     for note in notes:
@@ -516,7 +522,8 @@ def export_review_queue(
         key=lambda row: (
             row.get("priority", 99),
             -(row.get("confidence") if isinstance(row.get("confidence"), (int, float)) else -1),
-            row.get("detectedAt", ""),
+            -sortable_timestamp(row.get("detectedAt")),
+            row.get("featureName", ""),
         )
     )
     write_json(DERIVED_DIR / "review_queue.json", {"generatedAt": now_iso(), "items": rows})

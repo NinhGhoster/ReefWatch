@@ -187,7 +187,7 @@ Purpose: fast triage of machine-generated detections
 Backed by: `derived/review_queue.json`
 
 Show:
-- candidate changes sorted by feature priority, confidence, and recency
+- candidate changes sorted by feature priority, confidence, and recency (newest first when priority/confidence tie)
 - before / after thumbs
 - metrics summary
 - latest analyst note, if any
