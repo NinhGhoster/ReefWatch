@@ -13,6 +13,7 @@ Outputs (all under derived/):
 - traffic.jsonl
 - notes.jsonl
 - feature_status.jsonl
+- review_queue.json
 - overview.json
 - source_health.json
 
@@ -419,6 +420,73 @@ def export_feature_status(
     return rows
 
 
+def export_review_queue(
+    features_by_id: dict[str, dict[str, Any]],
+    changes: list[dict[str, Any]],
+    scenes: list[dict[str, Any]],
+    notes: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    scenes_by_id = {scene["id"]: scene for scene in scenes}
+    notes_by_feature: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    for note in notes:
+        notes_by_feature[note["featureId"]].append(note)
+
+    rows = []
+    for change in changes:
+        if change.get("reviewStatus") != "pending":
+            continue
+        feature = features_by_id.get(change["featureId"])
+        if not feature:
+            continue
+        before_scene = scenes_by_id.get(change.get("beforeSceneId"))
+        after_scene = scenes_by_id.get(change.get("afterSceneId"))
+        feature_notes = notes_by_feature.get(change["featureId"], [])
+        latest_note = feature_notes[0] if feature_notes else None
+        rows.append(
+            {
+                "changeId": change["id"],
+                "featureId": change["featureId"],
+                "featureKey": feature["key"],
+                "featureName": feature["name"],
+                "priority": feature["priority"],
+                "claimant": feature["claimant"],
+                "group": feature["group"],
+                "classification": change.get("classification"),
+                "confidence": change.get("confidence"),
+                "detectedAt": change.get("detectedAt"),
+                "metrics": change.get("metrics") or {},
+                "beforeScene": {
+                    "sceneId": before_scene.get("id") if before_scene else change.get("beforeSceneId"),
+                    "capturedAt": before_scene.get("capturedAt") if before_scene else None,
+                    "source": before_scene.get("source") if before_scene else change.get("source"),
+                    "path": before_scene.get("path") if before_scene else None,
+                },
+                "afterScene": {
+                    "sceneId": after_scene.get("id") if after_scene else change.get("afterSceneId"),
+                    "capturedAt": after_scene.get("capturedAt") if after_scene else None,
+                    "source": after_scene.get("source") if after_scene else change.get("source"),
+                    "path": after_scene.get("path") if after_scene else None,
+                },
+                "latestNote": {
+                    "noteId": latest_note.get("id") if latest_note else None,
+                    "createdAt": latest_note.get("createdAt") if latest_note else None,
+                    "kind": latest_note.get("kind") if latest_note else None,
+                    "text": latest_note.get("text") if latest_note else None,
+                },
+            }
+        )
+
+    rows.sort(
+        key=lambda row: (
+            row.get("priority", 99),
+            -(row.get("confidence") if isinstance(row.get("confidence"), (int, float)) else -1),
+            row.get("detectedAt", ""),
+        )
+    )
+    write_json(DERIVED_DIR / "review_queue.json", {"generatedAt": now_iso(), "items": rows})
+    return rows
+
+
 def export_overview(
     features: list[dict[str, Any]],
     scenes: list[dict[str, Any]],
@@ -426,6 +494,7 @@ def export_overview(
     traffic: list[dict[str, Any]],
     notes: list[dict[str, Any]],
     feature_status: list[dict[str, Any]],
+    review_queue: list[dict[str, Any]],
 ) -> dict[str, Any]:
     recent_scenes = sorted(scenes, key=lambda row: row.get("capturedAt", ""), reverse=True)[:10]
     pending_changes = [row for row in changes if row.get("reviewStatus") == "pending"]
@@ -441,7 +510,7 @@ def export_overview(
             "trafficObservations": len(traffic),
             "notes": len(notes),
         },
-        "reviewQueue": pending_changes[:10],
+        "reviewQueue": review_queue[:10],
         "featureStatus": feature_status[:10],
         "recentScenes": recent_scenes,
         "recentTraffic": recent_traffic,
@@ -533,12 +602,14 @@ def has_configured_secret(key: str) -> bool:
 def main() -> None:
     features = export_features()
     features_by_key = {feature["key"]: feature for feature in features}
+    features_by_id = {feature["id"]: feature for feature in features}
     scenes = export_scenes(features_by_key)
     changes = export_changes(features_by_key)
     traffic = export_traffic(features_by_key)
     notes = export_notes(features_by_key)
     feature_status = export_feature_status(features, scenes, changes, traffic, notes)
-    overview = export_overview(features, scenes, changes, traffic, notes, feature_status)
+    review_queue = export_review_queue(features_by_id, changes, scenes, notes)
+    overview = export_overview(features, scenes, changes, traffic, notes, feature_status, review_queue)
     health = export_source_health(features, scenes, changes, traffic)
 
     assert len(feature_status) == len(features), "feature_status should include every feature"
@@ -550,6 +621,7 @@ def main() -> None:
     print(f"- traffic observations: {len(traffic)}")
     print(f"- notes: {len(notes)}")
     print(f"- feature status rows: {len(feature_status)}")
+    print(f"- review queue items: {len(review_queue)}")
     print(f"- pending review: {overview['counts']['pendingChanges']}")
     print(f"- planet configured: {health['sources']['planet']['configured']}")
     print(f"- output dir: {DERIVED_DIR}")

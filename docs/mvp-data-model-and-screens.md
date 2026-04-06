@@ -117,6 +117,7 @@ Human context layered on top of detections.
 - `derived/traffic.jsonl` stores normalized traffic observations
 - `derived/notes.jsonl` stores analyst notes
 - `derived/feature_status.jsonl` stores one app-facing summary row per feature for list/triage screens
+- `derived/review_queue.json` stores the sorted pending-review worklist with feature metadata, before/after scene refs, and latest analyst note
 - `derived/source_health.json` stores secret-safe ingest/config health
 
 Current repo bridge: `python3 scripts/export_mvp_snapshot.py` builds the `derived/` layer from existing script outputs without exposing secret values.
@@ -124,6 +125,7 @@ Current repo bridge: `python3 scripts/export_mvp_snapshot.py` builds the `derive
 Additional bridge outputs:
 - `derived/overview.json` — daily-brief friendly summary for the Overview screen
 - `derived/feature_status.jsonl` — feature list / inbox-style summary with latest scene, latest change, latest traffic, and pending-review flags
+- `derived/review_queue.json` — explicit change-review worklist sorted for analyst triage
 - `derived/notes.jsonl` — normalized analyst notes when `analyst_notes.jsonl` exists
 
 ## MVP Screens
@@ -176,10 +178,13 @@ Show:
 
 Purpose: fast triage of machine-generated detections
 
+Backed by: `derived/review_queue.json`
+
 Show:
-- candidate changes sorted by priority and recency
+- candidate changes sorted by feature priority, confidence, and recency
 - before / after thumbs
 - metrics summary
+- latest analyst note, if any
 - actions: confirm, dismiss, defer, annotate
 
 ### 5. Source Health / Ingest Status
