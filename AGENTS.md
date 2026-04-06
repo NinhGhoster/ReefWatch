@@ -17,32 +17,47 @@ All scripts are in `scripts/`. Configuration and data in `data/`. Documentation 
 
 ## Architecture
 
+### Product Direction (current)
+
+ReefWatch should be treated as a **feature-centric monitoring workflow** for disputed South China Sea features.
+
+The MVP should answer:
+1. what changed?
+2. where did it change?
+3. how confident are we that it matters?
+
+Important boundaries:
+- prioritize feature timelines, reviewability, and analyst notes over map-heavy dashboards
+- keep Planet optional and secret-safe
+- do not assume any paid provider is always present
+
 ### Data Flow
 
 ```
-NASA Worldview ──→ imagery_monitor.py ──→ imagery_history/*.png
-                                              │
-                                              ├── change_detection (MD5 + size)
-                                              └── historical_imagery_log.jsonl
+Free imagery / traffic scripts ──→ raw logs + imagery_history/
+                                     │
+                                     ├── planet_changes.jsonl
+                                     ├── aircraft / ship logs
+                                     └── analyst_notes.jsonl
 
-OpenSky API ────→ opensky_sweep.py ────→ detections.jsonl
-                   (per-feature bbox)       │
-                                            └── aircraft_detections.jsonl
-
-AISHub API ────→ improved_ship_monitor.py ──→ ships_log.jsonl
+Normalized MVP bridge
+scripts/export_mvp_snapshot.py ──→ derived/*.jsonl + *.json
+scripts/validate_mvp_snapshot.py ──→ contract + secret-safety checks
 ```
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
-| `data/scs_features.json` | Master database: 79 SCS features with lat/lon/country |
-| `data/target_features.json` | Spratly + Paracel subset (77 features) for scanning |
+| `data/scs_features.json` | Broader feature database with lat/lon/country metadata |
+| `data/target_features.json` | Canonical monitored target set (currently 77 features) |
 | `data/monitoring_config.json` | Monitoring zones, bbox, active groups |
 | `scripts/quick_check.py` | Fast aircraft scan (<30s, combined bbox) |
 | `scripts/opensky_sweep.py` | Periodic sweep — per-feature bbox, 15min interval |
-| `scripts/historical_imagery.py` | 90-day satellite imagery backfill with resume |
+| `scripts/historical_imagery.py` | Historical satellite imagery backfill with resume |
 | `scripts/improved_aircraft_monitor.py` | Multi-source aircraft with dedup |
+| `scripts/export_mvp_snapshot.py` | Normalize raw outputs into `derived/` |
+| `scripts/validate_mvp_snapshot.py` | Validate MVP contract + secret-safe source health |
 
 ---
 
@@ -69,6 +84,26 @@ When analyzing satellite imagery or investigating detected activity:
 - Wayback Machine for historical web pages about specific features
 
 ---
+
+## MVP Contract
+
+When adding or changing output-producing scripts, keep the app-facing contract stable unless intentionally revising the docs:
+- `derived/features.jsonl`
+- `derived/scenes.jsonl`
+- `derived/changes.jsonl`
+- `derived/traffic.jsonl`
+- `derived/notes.jsonl`
+- `derived/feature_status.jsonl`
+- `derived/review_queue.json`
+- `derived/overview.json`
+- `derived/source_health.json`
+
+If you touch this layer, run:
+
+```bash
+python3 scripts/export_mvp_snapshot.py
+python3 scripts/validate_mvp_snapshot.py
+```
 
 ## Satellite Imagery Processing (from space-data-processing skill)
 
@@ -99,12 +134,13 @@ Follow this pattern when processing satellite imagery:
 
 ### Planet Labs Integration
 
-**API Plan**: Education & Research Basic (thumbnail-only, 256×256)
+**Current supported path**: optional PSScene search + thumbnail download + local change detection.
 
-- **Resolution**: 3-5m (PSScene) thumbnails at 256×256px
-- **Search**: Per-feature bbox (±0.05°), cloud_cover < 20%, prefers standard quality
-- **Download**: Direct thumbnail URL (no asset activation needed for this plan)
+- **Resolution**: 3-5m source imagery, thumbnail-first workflow in current repo
+- **Search**: per-feature bbox (±0.05°), cloud_cover < 20%, optional `PLANET_QUALITY=standard|test`
+- **Download**: direct thumbnail URL when available; do not assume full-resolution asset access
 - **Change Detection**: SSIM comparison via `planet_change_detection.py`
+- **Secret handling**: keep `PLANET_API_KEY` only in env or local `.env`; never commit it and never print it in derived/report outputs
 
 **Classification Types** (from SSIM analysis):
 - `new_construction` — New structures visible on previously empty ground
@@ -112,7 +148,7 @@ Follow this pattern when processing satellite imagery:
 - `major_change` — Significant structural changes
 - `cloud_interference` — Cloud contamination in comparison
 
-**Note**: Full-resolution (3-5m PNG) requires Planet Analysis or Education Pro plan.
+**Note**: Full-resolution downloads are plan-dependent and should be documented separately if access is ever confirmed.
 
 ## Manual Download Workflow (Planet Explorer)
 

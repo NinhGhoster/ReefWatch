@@ -80,11 +80,11 @@
 ### `improved_aircraft_monitor.py`
 - Multi-source aircraft scan over wide SCS bbox
 - OpenSky + ADSB.fi with deduplication
-- Maps aircraft to nearest SCS feature (79 features)
+- Maps aircraft to nearest monitored SCS feature (current target set: 77 features)
 - Flight track enrichment available (`--tracks` flag)
 - Saves to `improved_aircraft_log.jsonl`
 - Summary view: `--summary`
-- **Tested:** ✅ Detected 220 aircraft, 3.8s scan time
+- **Tested:** ✅ Detected 220 aircraft, 3.8s scan time during initial evaluation
 
 ### `improved_ship_monitor.py`
 - Multi-source vessel tracking (AISHub + OpenSky aircraft near ports)
@@ -96,12 +96,26 @@
 - URL generation: `--urls`
 - **Tested:** ✅ URLs generated, scan logic works, awaiting AISHub key for AIS data
 
+### MVP bridge / app-facing outputs
+- `scripts/export_mvp_snapshot.py` normalizes repo outputs into `derived/`
+- `scripts/validate_mvp_snapshot.py` checks the exported contract and secret-safe source health
+- current app-facing files:
+  - `derived/features.jsonl`
+  - `derived/scenes.jsonl`
+  - `derived/changes.jsonl`
+  - `derived/traffic.jsonl`
+  - `derived/notes.jsonl`
+  - `derived/feature_status.jsonl`
+  - `derived/review_queue.json`
+  - `derived/overview.json`
+  - `derived/source_health.json`
+
 ### Original scripts (still work, unchanged)
-- `aircraft_monitor.py` — Per-feature OpenSky checks
+- `aircraft_monitor.py` — per-feature OpenSky checks
 - `ship_monitor.py` — URL generation + AISHub check
-- `quick_check.py` — Fast SCS aircraft scan with feature mapping
-- `opensky_sweep.py` — Periodic aircraft sweep (every 15 min)
-- `opensky_once.py` — Single Spratly bbox check
+- `quick_check.py` — fast SCS aircraft scan with feature mapping
+- `opensky_sweep.py` — periodic aircraft sweep
+- `opensky_once.py` — single bbox check
 
 ---
 
@@ -113,11 +127,11 @@
 | Aircraft detected | ~10-30 typical | **220** in initial scan |
 | Data sources | OpenSky only | OpenSky + ADSB.fi (multi-source) |
 | Deduplication | None | By ICAO24 across sources |
-| Feature mapping | None | All 79 SCS features mapped |
+| Feature mapping | None | Feature-centric mapping across the 77-feature monitored target set |
 | Ship URLs | Basic | 24 locations incl. 17 SCS anchorages |
 | Ship AIS | AISHub demo (empty) | Ready for AISHub key |
 | Flight tracks | Not available | Available via `--tracks` |
-| Logging | Separate files | Unified improved_*_log.jsonl |
+| Logging | Separate files | Unified improved_*_log.jsonl + normalized `derived/` export |
 
 ---
 
@@ -127,4 +141,5 @@
 2. **AviationStack free tier** — 100 req/month, gives flight status data for specific airports
 3. **AIS receiver** — Deploy a Raspberry Pi + RTL-SDR dongle near the coast to capture local AIS
 4. **ADS-B receiver** — Same hardware can also capture ADS-B aircraft data locally
-5. **Sentinel Hub / Planet** — Satellite imagery for construction/military activity monitoring (already have imagery_monitor.py)
+5. **Sentinel-2 / Planet** — Free baseline imagery plus optional higher-resolution Planet thumbnails for analyst review
+6. **Preserve Planet as optional** — keep auth local in env or `.env`; downstream health/report outputs should only expose configured/not configured, never secret values
