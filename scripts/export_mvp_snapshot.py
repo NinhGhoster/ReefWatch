@@ -31,7 +31,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from secret_utils import has_configured_secret
+from secret_utils import get_planet_quality_preference, has_configured_secret
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -667,7 +667,7 @@ def export_source_health(
             "planet": {
                 "configured": planet_key_present,
                 "secretSafe": True,
-                "qualityPreference": os.environ.get("PLANET_QUALITY", "standard").strip().lower() or "standard",
+                "qualityPreference": get_planet_quality_preference(BASE_DIR),
                 "latestFetchAt": latest_timestamp(load_jsonl(PLANET_FETCH_LOG)),
                 "latestSceneAt": latest_timestamp(planet_rows, keys=("capturedAt", "publishedDate")),
                 "sceneCount": source_counts.get("planet", 0),

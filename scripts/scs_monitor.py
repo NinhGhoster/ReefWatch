@@ -2,7 +2,7 @@
 """
 SCS Monitor — Master orchestrator for South China Sea monitoring.
 
-Coordinates aircraft, ship, and imagery monitoring across all 79 features.
+Coordinates aircraft, ship, and imagery monitoring across the monitored South China Sea feature set.
 Supports filtering by feature, monitoring type, and change-only output.
 
 Usage:

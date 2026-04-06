@@ -24,7 +24,7 @@ from pathlib import Path
 
 import requests
 
-from secret_utils import get_configured_secret, load_dotenv_if_present
+from secret_utils import get_configured_secret, get_planet_quality_preference, load_dotenv_if_present
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(SCRIPT_DIR)
@@ -105,13 +105,14 @@ def build_geometry(lat, lon):
 def get_preferred_quality():
     """Return Planet quality preference from env/.env in a validated form."""
     load_dotenv_if_present(BASE_DIR)
-    quality = os.environ.get("PLANET_QUALITY", DEFAULT_PLANET_QUALITY).strip().lower()
-    if quality not in VALID_QUALITY_VALUES:
+    raw_quality = os.environ.get("PLANET_QUALITY", DEFAULT_PLANET_QUALITY)
+    quality = get_planet_quality_preference(BASE_DIR)
+    normalized_raw = raw_quality.strip().lower() if isinstance(raw_quality, str) else DEFAULT_PLANET_QUALITY
+    if normalized_raw not in VALID_QUALITY_VALUES:
         print(
-            f"⚠️  Unsupported PLANET_QUALITY '{quality}'. "
+            f"⚠️  Unsupported PLANET_QUALITY '{normalized_raw}'. "
             f"Falling back to '{DEFAULT_PLANET_QUALITY}'."
         )
-        return DEFAULT_PLANET_QUALITY
     return quality
 
 

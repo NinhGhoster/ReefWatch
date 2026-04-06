@@ -41,6 +41,7 @@ SOURCE_HEALTH_REQUIRED_KEYS = {"generatedAt", "features", "sources"}
 PLANET_HEALTH_REQUIRED_KEYS = {
     "configured",
     "secretSafe",
+    "qualityPreference",
     "latestFetchAt",
     "latestSceneAt",
     "sceneCount",
@@ -49,6 +50,8 @@ PLANET_HEALTH_REQUIRED_KEYS = {
     "pendingChangeCount",
     "status",
 }
+
+VALID_PLANET_QUALITY_VALUES = {"standard", "test"}
 FORBIDDEN_SECRET_MARKERS = ["api_key", "planet_api_key", "authorization", "basic "]
 PLACEHOLDER_PREFIXES = ("your_", "replace_", "example", "changeme")
 
@@ -159,6 +162,12 @@ def main() -> int:
 
     if sources["planet"].get("secretSafe") is not True:
         raise ValidationError("source_health.sources.planet.secretSafe must be true")
+
+    if sources["planet"].get("qualityPreference") not in VALID_PLANET_QUALITY_VALUES:
+        raise ValidationError(
+            "source_health.sources.planet.qualityPreference must be one of: "
+            + ", ".join(sorted(VALID_PLANET_QUALITY_VALUES))
+        )
 
     assert_no_secret_strings(source_health, "source_health.json")
     assert_no_secret_strings(overview, "overview.json")

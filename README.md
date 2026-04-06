@@ -74,7 +74,7 @@ reefwatch/
 │   ├── opensky_sweep.py             # Periodic OpenSky sweep
 │   └── ...
 ├── data/                 # Configuration and feature database
-│   ├── scs_features.json          # 79-feature database
+│   ├── scs_features.json          # broader South China Sea feature database
 │   ├── target_features.json       # Spratly+Paracel target list
 │   ├── monitoring_config.json     # Monitoring configuration
 │   └── ship_urls.json             # Ship monitoring URLs

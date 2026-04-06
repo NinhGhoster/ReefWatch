@@ -14,6 +14,9 @@ PLACEHOLDER_PREFIXES = (
     "changeme",
 )
 
+DEFAULT_PLANET_QUALITY = "standard"
+VALID_PLANET_QUALITY_VALUES = {"standard", "test"}
+
 
 def load_dotenv_if_present(base_dir: str | Path) -> Path | None:
     """Load simple KEY=VALUE pairs from a local .env file if present.
@@ -79,3 +82,33 @@ def get_configured_secret(base_dir: str | Path, key: str) -> str | None:
 
 def has_configured_secret(base_dir: str | Path, key: str) -> bool:
     return get_configured_secret(base_dir, key) is not None
+
+
+def get_validated_env_choice(
+    base_dir: str | Path,
+    key: str,
+    *,
+    default: str,
+    valid_values: set[str],
+) -> str:
+    """Return a normalized env/.env choice, falling back to a safe default.
+
+    Existing environment variables win over .env values, matching load order for
+    the rest of the repo's config handling.
+    """
+    load_dotenv_if_present(base_dir)
+    raw_value = os.environ.get(key, default)
+    value = raw_value.strip().lower() if isinstance(raw_value, str) else default
+    if value in valid_values:
+        return value
+    return default
+
+
+def get_planet_quality_preference(base_dir: str | Path) -> str:
+    """Return the validated Planet quality preference from env/.env."""
+    return get_validated_env_choice(
+        base_dir,
+        "PLANET_QUALITY",
+        default=DEFAULT_PLANET_QUALITY,
+        valid_values=VALID_PLANET_QUALITY_VALUES,
+    )
