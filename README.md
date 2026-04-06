@@ -29,6 +29,7 @@ ReefWatch should be treated as a **feature-centric monitoring workflow** for Sou
 See:
 - `docs/product-direction.md`
 - `docs/mvp-data-model-and-screens.md`
+- `docs/repo-context.md`
 
 ## Quick Start
 

@@ -20,6 +20,7 @@ from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DERIVED_DIR = BASE_DIR / "derived"
+ENV_EXAMPLE = BASE_DIR / ".env.example"
 
 REQUIRED_FILES = [
     "features.jsonl",
@@ -49,6 +50,7 @@ PLANET_HEALTH_REQUIRED_KEYS = {
     "status",
 }
 FORBIDDEN_SECRET_MARKERS = ["api_key", "planet_api_key", "authorization", "basic "]
+PLACEHOLDER_PREFIXES = ("your_", "replace_", "example", "changeme")
 
 
 class ValidationError(Exception):
@@ -90,7 +92,36 @@ def assert_no_secret_strings(value: Any, label: str) -> None:
             raise ValidationError(f"{label} appears to contain secret-like material ({marker})")
 
 
+def assert_env_example_is_safe(path: Path) -> None:
+    if not path.exists():
+        raise ValidationError(".env.example is missing")
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    values: dict[str, str] = {}
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+
+    if "PLANET_API_KEY" not in values:
+        raise ValidationError(".env.example must include PLANET_API_KEY")
+
+    api_key = values["PLANET_API_KEY"]
+    if not api_key:
+        raise ValidationError(".env.example PLANET_API_KEY must use a placeholder value")
+
+    lowered = api_key.lower()
+    if not any(lowered.startswith(prefix) for prefix in PLACEHOLDER_PREFIXES):
+        raise ValidationError(
+            ".env.example PLANET_API_KEY must stay a placeholder, not a real-looking secret"
+        )
+
+
 def main() -> int:
+    assert_env_example_is_safe(ENV_EXAMPLE)
+
     missing_files = [name for name in REQUIRED_FILES if not (DERIVED_DIR / name).exists()]
     if missing_files:
         raise ValidationError(f"derived/ is missing required files: {', '.join(missing_files)}")
@@ -160,6 +191,7 @@ def main() -> int:
     print(f"- notes: {len(notes)}")
     print(f"- review_queue_items: {len(review_queue.get('items', []))}")
     print(f"- planet_configured: {sources['planet']['configured']}")
+    print(f"- env_example_safe: yes")
     return 0
 
 
