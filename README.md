@@ -50,6 +50,9 @@ python3 scripts/historical_imagery.py --status
 
 # Export app-facing MVP snapshot into derived/
 python3 scripts/export_mvp_snapshot.py
+
+# Secret-safe Planet config check
+python3 scripts/planet_fetch.py --config-check
 ```
 
 ## Project Structure
@@ -113,6 +116,7 @@ Recent-activity fields are now explicitly windowed so the UI can distinguish his
 - Ships: requires paid AIS API for live data
 - Free imagery sources are lower resolution than commercial tasking products
 - Planet integration is thumbnail-first for now, requires a locally configured `PLANET_API_KEY`, and should never rely on committed secrets
+- `PLANET_QUALITY` can be set locally (`standard` or `test`) and is now applied to Planet search requests without exposing the key
 
 ## License
 

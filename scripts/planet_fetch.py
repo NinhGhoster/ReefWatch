@@ -39,7 +39,8 @@ PLANET_SEARCH_URL = f"{PLANET_API_BASE}/quick-search"
 ITEM_TYPE = "PSScene"
 ASSET_TYPE = "visual"
 CLOUD_MAX = 0.2
-PREFER_QUALITY = os.environ.get("PLANET_QUALITY", "standard")  # standard or test
+DEFAULT_PLANET_QUALITY = "standard"  # standard or test
+VALID_QUALITY_VALUES = {"standard", "test"}
 GEOMETRY_DELTA = 0.05  # ±0.05° around feature center
 
 # Rate limit
@@ -101,43 +102,67 @@ def build_geometry(lat, lon):
     }
 
 
-def build_search_filter(geometry, date_start, date_end):
+def get_preferred_quality():
+    """Return Planet quality preference from env/.env in a validated form."""
+    load_dotenv_if_present(BASE_DIR)
+    quality = os.environ.get("PLANET_QUALITY", DEFAULT_PLANET_QUALITY).strip().lower()
+    if quality not in VALID_QUALITY_VALUES:
+        print(
+            f"⚠️  Unsupported PLANET_QUALITY '{quality}'. "
+            f"Falling back to '{DEFAULT_PLANET_QUALITY}'."
+        )
+        return DEFAULT_PLANET_QUALITY
+    return quality
+
+
+def build_search_filter(geometry, date_start, date_end, quality_preference):
     """Build the Planet API search filter."""
+    filters = [
+        {
+            "type": "GeometryFilter",
+            "field_name": "geometry",
+            "config": geometry
+        },
+        {
+            "type": "DateRangeFilter",
+            "field_name": "acquired",
+            "config": {
+                "gte": date_start,
+                "lte": date_end
+            }
+        },
+        {
+            "type": "RangeFilter",
+            "field_name": "cloud_cover",
+            "config": {"lte": CLOUD_MAX}
+        }
+    ]
+
+    if quality_preference in VALID_QUALITY_VALUES:
+        filters.append(
+            {
+                "type": "StringInFilter",
+                "field_name": "quality_category",
+                "config": [quality_preference],
+            }
+        )
+
     return {
         "item_types": [ITEM_TYPE],
         "filter": {
             "type": "AndFilter",
-            "config": [
-                {
-                    "type": "GeometryFilter",
-                    "field_name": "geometry",
-                    "config": geometry
-                },
-                {
-                    "type": "DateRangeFilter",
-                    "field_name": "acquired",
-                    "config": {
-                        "gte": date_start,
-                        "lte": date_end
-                    }
-                },
-                {
-                    "type": "RangeFilter",
-                    "field_name": "cloud_cover",
-                    "config": {"lte": CLOUD_MAX}
-                }
-            ]
+            "config": filters
         }
     }
 
 
-def search_imagery(lat, lon, date_start, date_end):
+def search_imagery(lat, lon, date_start, date_end, quality_preference):
     """Search Planet API for PSScene imagery.
 
     Returns list of item dicts with properties and _links.
     """
     geometry = build_geometry(lat, lon)
-    search_body = build_search_filter(geometry, date_start, date_end)
+    search_body = build_search_filter(geometry, date_start, date_end, quality_preference)
 
     resp = requests.post(
         PLANET_SEARCH_URL,
@@ -152,7 +177,7 @@ def search_imagery(lat, lon, date_start, date_end):
     if resp.status_code == 429:
         print("  ⚠️  Rate limited by Planet API — waiting 10s")
         time.sleep(10)
-        return search_imagery(lat, lon, date_start, date_end)
+        return search_imagery(lat, lon, date_start, date_end, quality_preference)
     resp.raise_for_status()
 
     data = resp.json()
@@ -266,7 +291,7 @@ def log_fetch(entry):
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
-def fetch_feature(feature, date_start, date_end, resume=False):
+def fetch_feature(feature, date_start, date_end, quality_preference, resume=False):
     """Fetch Planet imagery for a single feature.
 
     Returns list of (date_str, filepath, size) tuples for downloaded images.
@@ -279,7 +304,7 @@ def fetch_feature(feature, date_start, date_end, resume=False):
     print(f"\n📍 {name} ({lat}, {lon})")
     print(f"   Searching {date_start} to {date_end}...")
 
-    items = search_imagery(lat, lon, date_start, date_end)
+    items = search_imagery(lat, lon, date_start, date_end, quality_preference)
     if not items:
         print(f"   No imagery found (cloud_cover ≤ {CLOUD_MAX})")
         return []
@@ -343,6 +368,7 @@ def main():
     parser.add_argument("--start-date", help="Start date (YYYY-MM-DD)")
     parser.add_argument("--end-date", help="End date (YYYY-MM-DD)")
     parser.add_argument("--resume", action="store_true", help="Skip already downloaded images")
+    parser.add_argument("--config-check", action="store_true", help="Print secret-safe Planet config status and exit")
     args = parser.parse_args()
 
     # Determine date range
@@ -359,6 +385,16 @@ def main():
         date_end = datetime.now(timezone.utc).strftime("%Y-%m-%dT23:59:59Z")
         date_start = (datetime.now(timezone.utc) - timedelta(days=args.days)).strftime("%Y-%m-%dT00:00:00Z")
 
+    quality_preference = get_preferred_quality()
+
+    if args.config_check:
+        configured = bool(get_configured_secret(BASE_DIR, "PLANET_API_KEY"))
+        print("Planet config status")
+        print(f"- configured: {'yes' if configured else 'no'}")
+        print(f"- qualityPreference: {quality_preference}")
+        print(f"- baseDir: {BASE_DIR}")
+        return
+
     # Determine features
     features_db = load_features()
     if args.all:
@@ -374,10 +410,11 @@ def main():
     print(f"   Date range: {date_start} → {date_end}")
     print(f"   Features: {len(targets)}")
     print(f"   Cloud cover: ≤ {CLOUD_MAX:.0%}")
+    print(f"   Preferred quality: {quality_preference}")
 
     total_downloaded = 0
     for feature in targets:
-        dl = fetch_feature(feature, date_start, date_end, resume=args.resume)
+        dl = fetch_feature(feature, date_start, date_end, quality_preference, resume=args.resume)
         total_downloaded += len(dl)
 
     print(f"\n✅ Done. {total_downloaded} images downloaded.")

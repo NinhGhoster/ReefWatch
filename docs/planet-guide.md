@@ -34,6 +34,9 @@ python3 scripts/planet_fetch.py --feature woody_island --start-date 2026-03-01 -
 
 # Resume interrupted download session
 python3 scripts/planet_fetch.py --all --days 30 --resume
+
+# Secret-safe config check (does not print the API key)
+python3 scripts/planet_fetch.py --config-check
 ```
 
 ## Change Detection
@@ -83,7 +86,7 @@ The 5 priority test features:
 
 ### Current repo workflow (implemented)
 
-1. **Search**: POST `/data/v1/quick-search` with geometry, date range, and cloud filter
+1. **Search**: POST `/data/v1/quick-search` with geometry, date range, cloud filter, and optional quality-category filter
 2. **Select**: Pick best image per day (prefer standard quality, then lowest cloud cover)
 3. **Download thumbnail**: use the scene `_links.thumbnail` URL when present
 4. **Save locally**: write `{feature_key}_planet_{date}.png` to `imagery_history/`
@@ -112,6 +115,7 @@ If a higher-tier Planet plan is later confirmed, document that separately instea
 - **API Key**: Set `PLANET_API_KEY` in the environment or a local `.env` file
 - **Template**: Copy `.env.example` → `.env` and replace the placeholder with a real local key
 - **Validation**: `planet_fetch.py` now rejects placeholder values like `your_planet_api_key_here` up front so auth failures are explicit
+- **Quality control**: optional `PLANET_QUALITY=standard|test` is loaded from env or local `.env` and applied directly to Planet search filters
 - **Security**: No real key should be committed to the repo; `.env` is gitignored
 - **Operational rule**: secret/config health should only report whether a key is configured, never the key value itself
 - **Dependencies**: `requests`, `numpy`, `Pillow`, `scikit-image`
