@@ -51,6 +51,9 @@ python3 scripts/historical_imagery.py --status
 # Export app-facing MVP snapshot into derived/
 python3 scripts/export_mvp_snapshot.py
 
+# Validate the exported MVP contract and secret-safe source health
+python3 scripts/validate_mvp_snapshot.py
+
 # Secret-safe Planet config check
 python3 scripts/planet_fetch.py --config-check
 ```
@@ -103,6 +106,8 @@ reefwatch/
 - `derived/review_queue.json`
 
 This gives ReefWatch a review/UI-friendly shape without changing the existing collection scripts. It now also emits `derived/feature_status.jsonl` for the feature-list screen, `derived/overview.json` for the daily-brief screen, `derived/review_queue.json` for the change-triage screen, and `derived/notes.jsonl` for analyst notes when present. The source health export is secret-safe: it only reports whether `PLANET_API_KEY` is configured from the environment or local `.env`, never the key value.
+
+After exporting, run `python3 scripts/validate_mvp_snapshot.py` to check the file set, core record shapes, feature references, and that the Planet/source-health output does not leak secret-like material.
 
 Recent-activity fields are now explicitly windowed so the UI can distinguish historical coverage from fresh signals:
 - imagery recency = last 72 hours
