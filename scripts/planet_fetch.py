@@ -24,6 +24,8 @@ from pathlib import Path
 
 import requests
 
+from secret_utils import get_configured_secret, load_dotenv_if_present
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(SCRIPT_DIR)
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -46,31 +48,17 @@ RATE_LIMIT = 1.0
 os.makedirs(IMAGERY_DIR, exist_ok=True)
 
 
-def load_dotenv_if_present():
-    """Load simple KEY=VALUE pairs from a local .env file if present."""
-    env_path = Path(BASE_DIR) / ".env"
-    if not env_path.is_file():
-        return
-
-    for raw_line in env_path.read_text().splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        os.environ.setdefault(key, value)
-
-
 def require_planet_api_key():
     """Return Planet API key from env/.env or exit with a safe error."""
-    load_dotenv_if_present()
-    api_key = os.environ.get("PLANET_API_KEY", "").strip()
+    env_path = load_dotenv_if_present(BASE_DIR)
+    api_key = get_configured_secret(BASE_DIR, "PLANET_API_KEY")
     if api_key:
         return api_key
 
-    print("❌ PLANET_API_KEY is not set.")
-    print("   Set it in the environment or add PLANET_API_KEY=... to .env (gitignored).")
+    print("❌ PLANET_API_KEY is missing or still set to a placeholder value.")
+    if env_path:
+        print(f"   Checked local config: {env_path}")
+    print("   Set a real key in the environment or add PLANET_API_KEY=... to .env (gitignored).")
     sys.exit(2)
 
 

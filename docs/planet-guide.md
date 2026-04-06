@@ -110,7 +110,8 @@ If a higher-tier Planet plan is later confirmed, document that separately instea
 ## Environment
 
 - **API Key**: Set `PLANET_API_KEY` in the environment or a local `.env` file
-- **Template**: Copy `.env.example` → `.env` and fill in your local key
+- **Template**: Copy `.env.example` → `.env` and replace the placeholder with a real local key
+- **Validation**: `planet_fetch.py` now rejects placeholder values like `your_planet_api_key_here` up front so auth failures are explicit
 - **Security**: No real key should be committed to the repo; `.env` is gitignored
 - **Operational rule**: secret/config health should only report whether a key is configured, never the key value itself
 - **Dependencies**: `requests`, `numpy`, `Pillow`, `scikit-image`
