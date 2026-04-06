@@ -96,7 +96,9 @@ The 5 priority test features:
 
 ## Environment
 
-- **API Key**: Set `PLANET_API_KEY` env var, or defaults to embedded key
+- **API Key**: Set `PLANET_API_KEY` in the environment or a local `.env` file
+- **Template**: Copy `.env.example` → `.env` and fill in your local key
+- **Security**: No real key should be committed to the repo; `.env` is gitignored
 - **Dependencies**: `requests`, `numpy`, `Pillow`, `scikit-image`
 
 ## Integration

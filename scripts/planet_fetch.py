@@ -14,13 +14,13 @@ Usage:
 """
 
 import argparse
-import base64
 import json
 import os
 import sys
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import requests
 
@@ -32,7 +32,6 @@ FEATURES_FILE = os.path.join(DATA_DIR, "target_features.json")
 LOG_FILE = os.path.join(BASE_DIR, "planet_fetch_log.jsonl")
 
 # Planet API config
-PLANET_API_KEY = os.environ.get("PLANET_API_KEY", "PLAKf11ab368d5e34e88a7fcd952ba811363")
 PLANET_API_BASE = "https://api.planet.com/data/v1"
 PLANET_SEARCH_URL = f"{PLANET_API_BASE}/quick-search"
 ITEM_TYPE = "PSScene"
@@ -47,9 +46,37 @@ RATE_LIMIT = 1.0
 os.makedirs(IMAGERY_DIR, exist_ok=True)
 
 
+def load_dotenv_if_present():
+    """Load simple KEY=VALUE pairs from a local .env file if present."""
+    env_path = Path(BASE_DIR) / ".env"
+    if not env_path.is_file():
+        return
+
+    for raw_line in env_path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
+
+
+def require_planet_api_key():
+    """Return Planet API key from env/.env or exit with a safe error."""
+    load_dotenv_if_present()
+    api_key = os.environ.get("PLANET_API_KEY", "").strip()
+    if api_key:
+        return api_key
+
+    print("❌ PLANET_API_KEY is not set.")
+    print("   Set it in the environment or add PLANET_API_KEY=... to .env (gitignored).")
+    sys.exit(2)
+
+
 def get_auth():
     """Build Basic auth tuple from API key."""
-    return (PLANET_API_KEY, "")
+    return (require_planet_api_key(), "")
 
 
 def load_features():

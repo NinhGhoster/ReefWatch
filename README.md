@@ -19,6 +19,17 @@ South China Sea satellite monitoring system — tracking construction, aircraft,
 | ADSB.fi | Aircraft positions | Free (limited SCS coverage) |
 | AISHub | Ship AIS data | Free (registration required) |
 
+## Product Direction
+
+ReefWatch should be treated as a **feature-centric monitoring workflow** for South China Sea change detection:
+- prioritize strategic features over map-wide bulk noise
+- keep imagery, traffic observations, and analyst notes tied to each feature
+- make Planet imagery optional, higher-resolution enrichment rather than a hard dependency
+
+See:
+- `docs/product-direction.md`
+- `docs/mvp-data-model-and-screens.md`
+
 ## Quick Start
 
 ```bash
@@ -79,7 +90,8 @@ reefwatch/
 - OpenSky free tier: rate-limited (42 requests/10s), limited military coverage
 - ADSB.fi: sparse receivers over open ocean
 - Ships: requires paid AIS API for live data
-- Imagery: 250m resolution (ships visible as dots, not identifiable)
+- Free imagery sources are lower resolution than commercial tasking products
+- Planet integration requires a locally configured `PLANET_API_KEY` and should never rely on committed secrets
 
 ## License
 
