@@ -120,7 +120,7 @@ Human context layered on top of detections.
 - `derived/review_queue.json` stores the sorted pending-review worklist with feature metadata, before/after scene refs, and latest analyst note
 - `derived/source_health.json` stores secret-safe ingest/config health
 
-Current repo bridge: `python3 scripts/export_mvp_snapshot.py` builds the `derived/` layer from existing script outputs without exposing secret values.
+Current repo bridge: `python3 scripts/export_mvp_snapshot.py` builds the `derived/` layer from existing script outputs without exposing secret values. For Planet scenes, it also folds in safe fetch metadata from `planet_fetch_log.jsonl` when present so scene records can carry `providerSceneId`, `capturedAt`, `cloudCover`, `quality`, and fetch `status` without leaking auth material.
 
 Additional bridge outputs:
 - `derived/overview.json` — daily-brief friendly summary for the Overview screen

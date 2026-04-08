@@ -191,8 +191,20 @@ def export_features() -> list[dict[str, Any]]:
     return rows
 
 
+def build_planet_fetch_index() -> dict[tuple[str, str], dict[str, Any]]:
+    indexed: dict[tuple[str, str], dict[str, Any]] = {}
+    for raw in load_jsonl(PLANET_FETCH_LOG):
+        feature_key = raw.get("feature") or raw.get("feature_key")
+        published_date = raw.get("date") or raw.get("publishedDate")
+        if not feature_key or not published_date:
+            continue
+        indexed[(feature_key, published_date)] = raw
+    return indexed
+
+
 def export_scenes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
+    planet_fetch_index = build_planet_fetch_index()
     if IMAGERY_DIR.exists():
         for path in sorted(IMAGERY_DIR.iterdir()):
             if not path.is_file():
@@ -210,20 +222,21 @@ def export_scenes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str, 
             if source == "planet":
                 asset_kind = "thumbnail"
             resolution = {"planet": 4, "sentinel2": 10, "modis": 250}.get(source)
+            fetch_row = planet_fetch_index.get((feature_key, captured_date), {}) if source == "planet" else {}
             rows.append(
                 {
                     "id": f"scene:{source}:{feature_key}:{captured_date}",
                     "featureId": f"feature:{feature_key}",
                     "source": source,
-                    "providerSceneId": None,
-                    "capturedAt": f"{captured_date}T00:00:00Z",
+                    "providerSceneId": fetch_row.get("item_id") or fetch_row.get("provider_scene_id"),
+                    "capturedAt": fetch_row.get("capturedAt") or fetch_row.get("acquired") or f"{captured_date}T00:00:00Z",
                     "publishedDate": captured_date,
                     "assetKind": asset_kind,
                     "resolutionMeters": resolution,
-                    "cloudCover": None,
-                    "quality": None,
+                    "cloudCover": fetch_row.get("cloud_cover"),
+                    "quality": fetch_row.get("quality"),
                     "path": os.path.relpath(path, BASE_DIR),
-                    "status": "ready",
+                    "status": fetch_row.get("status") or "ready",
                     "format": ext.lstrip("."),
                     "bytes": path.stat().st_size,
                 }

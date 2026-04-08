@@ -75,6 +75,7 @@ Planet is useful, but it should remain an **optional enrichment layer**.
 - search PSScene scenes
 - download thumbnails when available
 - run local change detection on saved thumbnails
+- enrich derived scene records from `planet_fetch_log.jsonl` using only safe fields like scene IDs, timestamps, cloud cover, quality, and status
 - report only **secret-safe config health** in derived outputs
 
 ### Not safe to assume
