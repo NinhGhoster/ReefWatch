@@ -34,7 +34,7 @@ jobs:
     steps:
       - name: Activate conda environment
         run: |
-          source /apps/easybuild-2022/software/Core/Mambaforge/23.1.0-4/etc/profile.d/conda.sh
+          source /apps/easybuild-2022/easybuild/software/Core/Mambaforge/23.1.0-4/etc/profile.d/conda.sh
           conda activate /data/gpfs/projects/punim1990/haninhn/nisar_envs/reefwatch
 
       - name: Configure Earthdata credentials
