@@ -30,9 +30,9 @@ on:
 
 env:
   # Repository paths
-  REPO_DIR: ${{ github.workspace }}
-  DERIVED_DIR: ${{ github.workspace }}/derived
-  IMAGERY_DIR: ${{ github.workspace }}/imagery_history
+  REPO_DIR: /data/gpfs/projects/punim1990/haninhn/ReefWatch
+  DERIVED_DIR: /data/gpfs/projects/punim1990/haninhn/ReefWatch/derived
+  IMAGERY_DIR: /data/gpfs/projects/punim1990/haninhn/ReefWatch/imagery_history
 
 jobs:
   # ============================================================
@@ -45,9 +45,14 @@ jobs:
     env:
       EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
       EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
+    defaults:
+      run:
+        working-directory: /data/gpfs/projects/punim1990/haninhn/ReefWatch
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          path: ReefWatch
 
       - name: Set up Mambaforge
         uses: mamba-org/setup-micromamba@v1
@@ -98,9 +103,14 @@ jobs:
     env:
       EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
       EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
+    defaults:
+      run:
+        working-directory: /data/gpfs/projects/punim1990/haninhn/ReefWatch
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          path: ReefWatch
 
       - name: Set up Mambaforge
         uses: mamba-org/setup-micromamba@v1
@@ -136,9 +146,14 @@ jobs:
     env:
       EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
       EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
+    defaults:
+      run:
+        working-directory: /data/gpfs/projects/punim1990/haninhn/ReefWatch
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          path: ReefWatch
 
       - name: Set up Mambaforge
         uses: mamba-org/setup-micromamba@v1

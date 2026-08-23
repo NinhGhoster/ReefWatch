@@ -23,34 +23,32 @@ on:
 
 jobs:
   nisar-fetch-process:
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
+    runs-on: [self-hosted, spartan]
+    timeout-minutes: 180
     env:
       EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
       EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
+    defaults:
+      run:
+        working-directory: /data/gpfs/projects/punim1990/haninhn/ReefWatch
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          path: ReefWatch
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install earthaccess xarray h5netcdf rioxarray numpy scipy scikit-image rasterio
+      - name: Set up Mambaforge
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: environment.yml
+          cache-environment: true
 
-      - name: Verify Earthdata credentials
+      - name: Configure Earthdata credentials
         run: |
-          if [ -z "$EARTHDATA_USERNAME" ] || [ -z "$EARTHDATA_PASSWORD" ]; then
-            echo "❌ EARTHDATA_USERNAME and EARTHDATA_PASSWORD secrets required"
-            exit 1
-          fi
-          echo "✅ Earthdata credentials configured"
+          mkdir -p ~/.netrc
+          echo "machine urs.earthdata.nasa.gov login ${{ secrets.EARTHDATA_USERNAME }} password ${{ secrets.EARTHDATA_PASSWORD }}" > ~/.netrc
+          chmod 600 ~/.netrc
 
       - name: Fetch NISAR data
         run: |
