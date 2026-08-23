@@ -31,13 +31,7 @@ jobs:
     defaults:
       run:
         working-directory: /data/gpfs/projects/punim1990/haninhn/ReefWatch
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          path: ReefWatch
-
       - name: Set up Mambaforge
         uses: mamba-org/setup-micromamba@v1
         with:
@@ -107,6 +101,17 @@ jobs:
             print(f\"**Scenes (72h)**: {o['counts']['recentScenes72h']}\")
             print(f\"**Changes**: {o['counts']['changes']}\")
             print(f\"**Pending Review**: {o['counts']['pendingChanges']}\")
+            " >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f derived/source_health.json ]; then
+            python3 -c "
+            import json
+            with open('derived/source_health.json') as f:
+              h = json.load(f)
+            for src in ['nisar_gslc', 'nisar_gcov']:
+              if src in h['sources']:
+                s = h['sources'][src]
+                print(f\"**{src.upper()}**: {s['status']} ({s['sceneCount']} total, {s['recentSceneCount72h']} recent)\")
             " >> $GITHUB_STEP_SUMMARY
           fi
           if [ -f derived/source_health.json ]; then

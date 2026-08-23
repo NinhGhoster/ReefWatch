@@ -40,7 +40,7 @@ jobs:
   # ============================================================
   fetch-nisar:
     name: Fetch NISAR Data
-    runs-on: [self-hosted, spartan]  # Requires self-hosted runner on Spartan HPC
+    runs-on: [self-hosted, spartan]
     timeout-minutes: 180
     env:
       EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
@@ -49,11 +49,6 @@ jobs:
       run:
         working-directory: /data/gpfs/projects/punim1990/haninhn/ReefWatch
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          path: ReefWatch
-
       - name: Set up Mambaforge
         uses: mamba-org/setup-micromamba@v1
         with:
@@ -107,17 +102,6 @@ jobs:
       run:
         working-directory: /data/gpfs/projects/punim1990/haninhn/ReefWatch
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          path: ReefWatch
-
-      - name: Set up Mambaforge
-        uses: mamba-org/setup-micromamba@v1
-        with:
-          environment-file: environment.yml
-          cache-environment: true
-
       - name: Process NISAR GCOV (HH + HV)
         run: |
           python3 scripts/nisar_processor.py \
@@ -150,17 +134,6 @@ jobs:
       run:
         working-directory: /data/gpfs/projects/punim1990/haninhn/ReefWatch
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          path: ReefWatch
-
-      - name: Set up Mambaforge
-        uses: mamba-org/setup-micromamba@v1
-        with:
-          environment-file: environment.yml
-          cache-environment: true
-
       - name: Install dask for chunked processing
         run: pip install dask
 
