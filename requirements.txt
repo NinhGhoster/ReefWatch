@@ -1,0 +1,23 @@
+# ReefWatch dependencies
+# Core
+numpy
+scipy
+scikit-image
+rasterio
+rioxarray
+xarray
+h5netcdf
+earthaccess
+pillow
+requests
+dask
+
+# Sentinel-2
+python-cmr
+pyproj
+rioxarray
+rasterio
+
+# Optional: for S2 processing
+# pqdm
+# networkx

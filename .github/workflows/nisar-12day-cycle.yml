@@ -1,0 +1,388 @@
+name: NISAR 12-Day Monitoring Cycle
+
+on:
+  schedule:
+    # Run every 12 days at 06:00 UTC (aligned with NISAR descending pass)
+    - cron: '0 6 */12 * *'
+  workflow_dispatch:
+    inputs:
+      features:
+        description: 'Specific features to process (comma-separated, or "all")'
+        required: false
+        default: 'all'
+        type: string
+      products:
+        description: 'Products to fetch (gcov, gslc, both)'
+        required: false
+        default: 'both'
+        type: choice
+        options: ['gcov', 'gslc', 'both']
+      polarizations:
+        description: 'Polarizations for GCOV (comma-separated)'
+        required: false
+        default: 'HH,HV'
+        type: string
+      days:
+        description: 'Lookback days for fetch'
+        required: false
+        default: '14'
+        type: string
+
+env:
+  # Repository paths
+  REPO_DIR: ${{ github.workspace }}
+  DERIVED_DIR: ${{ github.workspace }}/derived
+  IMAGERY_DIR: ${{ github.workspace }}/imagery_history
+
+jobs:
+  # ============================================================
+  # JOB 1: Fetch NISAR Data
+  # ============================================================
+  fetch-nisar:
+    name: Fetch NISAR Data
+    runs-on: [self-hosted, spartan]  # Requires self-hosted runner on Spartan HPC
+    timeout-minutes: 180
+    env:
+      EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
+      EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Mambaforge
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+
+      - name: Configure Earthdata credentials
+        run: |
+          mkdir -p ~/.netrc
+          echo "machine urs.earthdata.nasa.gov login ${{ secrets.EARTHDATA_USERNAME }} password ${{ secrets.EARTHDATA_PASSWORD }}" > ~/.netrc
+          chmod 600 ~/.netrc
+
+      - name: Fetch NISAR GCOV
+        if: ${{ inputs.products != 'gslc' }}
+        run: |
+          python3 scripts/nisar_fetch.py \
+            --all \
+            --days ${{ github.event.inputs.days }} \
+            --product gcov \
+            --resume
+
+      - name: Fetch NISAR GSLC
+        if: ${{ inputs.products != 'gcov' }}
+        run: |
+          python3 scripts/nisar_fetch.py \
+            --all \
+            --days ${{ github.event.inputs.days }} \
+            --product gslc \
+            --resume
+
+      - name: Upload imagery artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nisar-imagery-${{ github.run_id }}
+          path: imagery_history/
+          retention-days: 30
+
+  # ============================================================
+  # JOB 2: Process NISAR Changes (GCOV)
+  # ============================================================
+  process-gcov:
+    name: Process NISAR GCOV Changes
+    runs-on: [self-hosted, spartan]
+    needs: fetch-nisar
+    timeout-minutes: 240
+    env:
+      EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
+      EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Mambaforge
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+
+      - name: Process NISAR GCOV (HH + HV)
+        run: |
+          python3 scripts/nisar_processor.py \
+            --all \
+            --product gcov \
+            --polarization HH HV \
+            --changelog
+
+      - name: Upload change logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: nisar-gcov-changes-${{ github.run_id }}
+          path: |
+            nisar_changes.jsonl
+            derived/
+          retention-days: 30
+
+  # ============================================================
+  # JOB 3: Process NISAR GSLC Coherence (Chunked)
+  # ============================================================
+  process-gslc:
+    name: Process NISAR GSLC Coherence
+    runs-on: [self-hosted, spartan]
+    needs: fetch-nisar
+    timeout-minutes: 480
+    env:
+      EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
+      EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Mambaforge
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+
+      - name: Install dask for chunked processing
+        run: pip install dask
+
+      - name: Process GSLC Coherence (chunked)
+        run: |
+          python3 scripts/nisar_coherence_chunked.py \
+            --all \
+            --polarization HH \
+            --tile-size 512 \
+            --overlap 64 \
+            --changelog
+
+      - name: Upload coherence results
+        uses: actions/upload-artifact@v4
+        with:
+          name: nisar-gslc-coherence-${{ github.run_id }}
+          path: |
+            nisar_changes.jsonl
+            derived/
+          retention-days: 30
+
+  # ============================================================
+  # JOB 4: Fetch Sentinel-2 Imagery
+  # ============================================================
+  fetch-sentinel2:
+    name: Fetch Sentinel-2 Imagery
+    runs-on: ubuntu-latest  # Can run on GitHub-hosted runner
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Fetch Sentinel-2 imagery
+        run: |
+          python3 scripts/sentinel2_fetch.py \
+            --all \
+            --days 60 \
+            --resume
+
+      - name: Upload S2 imagery
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sentinel2-imagery-${{ github.run_id }}
+          path: imagery_history/*_sentinel2_*.png
+          retention-days: 30
+
+  # ============================================================
+  # JOB 5: Sentinel-2 Correlation
+  # ============================================================
+  correlate-s2:
+    name: Sentinel-2 Correlation
+    runs-on: ubuntu-latest
+    needs: [process-gcov, fetch-sentinel2]
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Restore derived directory
+        run: |
+          mkdir -p derived
+          cp -r artifacts/derived/* derived/ 2>/dev/null || true
+          cp artifacts/nisar-gcov-changes-*/nisar_changes.jsonl . 2>/dev/null || true
+          cp -r artifacts/nisar-imagery-*/imagery_history/* imagery_history/ 2>/dev/null || true
+          cp -r artifacts/sentinel2-imagery-*/imagery_history/* imagery_history/ 2>/dev/null || true
+
+      - name: Run S2 Correlation
+        run: |
+          python3 scripts/s2_correlation.py --all --window-days 14 --changelog
+
+      - name: Upload S2 correlation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: s2-correlation-${{ github.run_id }}
+          path: |
+            s2_correlation.jsonl
+            derived/s2_correlation_report.json
+          retention-days: 30
+
+  # ============================================================
+  # JOB 6: OSINT Cross-Reference
+  # ============================================================
+  osint-crossref:
+    name: OSINT Cross-Reference
+    runs-on: ubuntu-latest
+    needs: [process-gcov]
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Restore data
+        run: |
+          mkdir -p derived
+          cp -r artifacts/derived/* derived/ 2>/dev/null || true
+          cp artifacts/nisar-gcov-changes-*/nisar_changes.jsonl . 2>/dev/null || true
+
+      - name: Run OSINT Cross-Reference
+        run: |
+          python3 scripts/osint_crossref.py --all
+
+      - name: Upload OSINT report
+        uses: actions/upload-artifact@v4
+        with:
+          name: osint-crossref-${{ github.run_id }}
+          path: |
+            osint_crossref.jsonl
+            derived/osint_crossref_report.json
+          retention-days: 30
+
+  # ============================================================
+  # JOB 7: Export MVP Snapshot
+  # ============================================================
+  export-mvp:
+    name: Export MVP Snapshot
+    runs-on: ubuntu-latest
+    needs: [correlate-s2, osint-crossref]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Restore all data
+        run: |
+          mkdir -p derived
+          cp -r artifacts/derived/* derived/ 2>/dev/null || true
+          cp artifacts/nisar-gcov-changes-*/nisar_changes.jsonl . 2>/dev/null || true
+          cp artifacts/s2-correlation-*/s2_correlation.jsonl . 2>/dev/null || true
+          cp artifacts/osint-crossref-*/osint_crossref.jsonl . 2>/dev/null || true
+          cp -r artifacts/nisar-imagery-*/imagery_history/* imagery_history/ 2>/dev/null || true
+          cp -r artifacts/sentinel2-imagery-*/imagery_history/* imagery_history/ 2>/dev/null || true
+
+      - name: Export MVP Snapshot
+        run: |
+          python3 scripts/export_mvp_snapshot.py
+
+      - name: Validate MVP Snapshot
+        run: |
+          python3 scripts/validate_mvp_snapshot.py
+
+      - name: Upload MVP Snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: mvp-snapshot-${{ github.run_id }}
+          path: derived/
+          retention-days: 90
+
+  # ============================================================
+  # JOB 8: Summary & Notification
+  # ============================================================
+  notify:
+    name: Notify Completion
+    runs-on: ubuntu-latest
+    needs: [export-mvp]
+    if: always()
+    steps:
+      - name: Download MVP snapshot
+        uses: actions/download-artifact@v4
+        with:
+          name: mvp-snapshot-${{ github.run_id }}
+          path: derived
+
+      - name: Generate Summary
+        id: summary
+        run: |
+          python3 -c "
+          import json
+          with open('derived/overview.json') as f:
+              o = json.load(f)
+          with open('derived/source_health.json') as f:
+              h = json.load(f)
+          print(f'## NISAR 12-Day Cycle Complete')
+          print(f'**Date**: ${{ github.event.workflow_run.created_at || github.event.head_commit.timestamp }}')
+          print(f'**Run**: ${{ github.run_id }}')
+          print(f'**Features**: {o[\"counts\"][\"features\"]}')
+          print(f'**Scenes**: {o[\"counts\"][\"scenes\"]} ({o[\"counts\"][\"recentScenes72h\"]} recent)')
+          print(f'**Changes**: {o[\"counts\"][\"changes\"]} ({o[\"counts\"][\"pendingChanges\"]} pending)')
+          print(f'**Sentinel-2**: {h[\"sources\"][\"sentinel2\"][\"sceneCount\"]} scenes ({h[\"sources\"][\"sentinel2\"][\"recentSceneCount72h\"]} recent)')
+          print(f'**NISAR GCOV**: {h[\"sources\"][\"nisar_gcov\"][\"sceneCount\"]} scenes ({h[\"sources\"][\"nisar_gcov\"][\"changeCount\"]} changes)')
+          print(f'**NISAR GSLC**: {h[\"sources\"][\"nisar_gslc\"][\"sceneCount\"]} scenes')
+          " >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify (Slack/Email)
+        if: failure()
+        run: |
+          echo "Workflow failed. Check logs."
+          # Add Slack webhook or email notification here

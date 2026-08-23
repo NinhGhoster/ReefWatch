@@ -1,0 +1,329 @@
+{
+  "products": {
+    "primary": "NISAR_L2_GSLC_PROVISIONAL_V1",
+    "secondary": "NISAR_L2_GCOV_PROVISIONAL_V1"
+  },
+  "polarizations": [
+    "VV",
+    "VH"
+  ],
+  "orbit_preference": "descending",
+  "geometry_delta": 0.05,
+  "fetch_window_days": 2,
+  "lookback_days": 14,
+  "change_thresholds": {
+    "amplitude_db": 3.0,
+    "coherence": 0.7,
+    "min_area_pixels": 9
+  },
+  "feature_orbits": {
+    "fiery_cross_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "subi_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "mischief_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "cuarteron_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "gaven_reefs": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "johnson_south_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "hughes_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "taiping_island": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "thitu_island": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "spratly_island": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "swallow_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "namyit_island": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "sin_cowe_island": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "song_tu_tay": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "amboyna_cay": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "commodore_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "ardasier_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "dallas_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "investigator_shoal": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "station_mike": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "station_sierra": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "lawak_island": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "parola_island": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "kota_island": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "viper_north_shoal": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "discovery_great_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "pearson_reef_a": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "pearson_reef_b": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "central_london_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "sand_cay": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "orleana_shoal": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "kingston_shoal": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "bombay_castle_shoal": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "alison_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "barque_canada_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "collins_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "cornwallis_south_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "east_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "grierson_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "ladd_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "lansdowne_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "petley_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "south_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "west_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "dk1_alexandra_bank": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "dk1_grainger_bank": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "dk1_prince_consort_bank": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "dk1_prince_of_wales_bank": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "dk1_rifleman_bank": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "dk1_vanguard_bank": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "flat_island": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "loaita_cay": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "second_thomas_shoal": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "west_york_island": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "erica_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "mariveles_reef": {
+      "relative_orbit": 45,
+      "direction": "ascending"
+    },
+    "woody_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "rocky_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "duncan_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "robert_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "lincoln_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "triton_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "pattle_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "money_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "tree_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "west_sand": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "north_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "antelope_reef": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "bombay_reef": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "drummond_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "middle_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "north_reef": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "observation_bank": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "quanfu_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "south_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "south_sand": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    },
+    "yagong_island": {
+      "relative_orbit": 122,
+      "direction": "descending"
+    }
+  }
+}

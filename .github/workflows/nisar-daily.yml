@@ -1,0 +1,124 @@
+name: NISAR Daily Fetch & Process
+
+on:
+  schedule:
+    - cron: '30 6 * * *'
+  workflow_dispatch:
+    inputs:
+      feature:
+        description: 'Specific feature to fetch (optional)'
+        required: false
+        type: string
+      days:
+        description: 'Lookback days'
+        required: false
+        default: '14'
+        type: string
+      product:
+        description: 'Product type (gslc, gcov, both)'
+        required: false
+        default: 'both'
+        type: choice
+        options: ['gslc', 'gcov', 'both']
+
+jobs:
+  nisar-fetch-process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
+      EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install earthaccess xarray h5netcdf rioxarray numpy scipy scikit-image rasterio
+
+      - name: Verify Earthdata credentials
+        run: |
+          if [ -z "$EARTHDATA_USERNAME" ] || [ -z "$EARTHDATA_PASSWORD" ]; then
+            echo "❌ EARTHDATA_USERNAME and EARTHDATA_PASSWORD secrets required"
+            exit 1
+          fi
+          echo "✅ Earthdata credentials configured"
+
+      - name: Fetch NISAR data
+        run: |
+          python3 scripts/nisar_fetch.py \
+            --all \
+            --days ${{ github.event.inputs.days || 14 }} \
+            --product ${{ github.event.inputs.product || 'both' }} \
+            --resume
+
+      - name: Process NISAR changes
+        run: |
+          python3 scripts/nisar_processor.py \
+            --all \
+            --product ${{ github.event.inputs.product || 'both' }} \
+            --method both \
+            --changelog
+
+      - name: Export MVP snapshot
+        run: |
+          python3 scripts/export_mvp_snapshot.py
+
+      - name: Validate MVP snapshot
+        run: |
+          python3 scripts/validate_mvp_snapshot.py
+
+      - name: Upload derived artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: derived-snapshot
+          path: derived/
+          retention-days: 30
+
+      - name: Upload imagery artifacts (sample)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: imagery-sample
+          path: |
+            imagery_history/*_latest.h5
+            imagery_history/*_latest.png
+          retention-days: 7
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## NISAR Daily Run Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Date**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "**Product**: ${{ github.event.inputs.product || 'both' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Lookback**: ${{ github.event.inputs.days || 14 }} days" >> $GITHUB_STEP_SUMMARY
+          if [ -f derived/overview.json ]; then
+            python3 -c "
+            import json
+            with open('derived/overview.json') as f:
+              o = json.load(f)
+            print(f\"**Features**: {o['counts']['features']}\")
+            print(f\"**Scenes (72h)**: {o['counts']['recentScenes72h']}\")
+            print(f\"**Changes**: {o['counts']['changes']}\")
+            print(f\"**Pending Review**: {o['counts']['pendingChanges']}\")
+            " >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f derived/source_health.json ]; then
+            python3 -c "
+            import json
+            with open('derived/source_health.json') as f:
+              h = json.load(f)
+            for src in ['nisar_gslc', 'nisar_gcov']:
+              if src in h['sources']:
+                s = h['sources'][src]
+                print(f\"**{src.upper()}**: {s['status']} ({s['sceneCount']} total, {s['recentSceneCount72h']} recent)\")
+            " >> $GITHUB_STEP_SUMMARY
+          fi

@@ -41,6 +41,8 @@ DERIVED_DIR = BASE_DIR / "derived"
 TARGET_FEATURES = DATA_DIR / "target_features.json"
 PLANET_CHANGES = BASE_DIR / "planet_changes.jsonl"
 PLANET_FETCH_LOG = BASE_DIR / "planet_fetch_log.jsonl"
+NISAR_FETCH_LOG = BASE_DIR / "nisar_fetch_log.jsonl"
+NISAR_CHANGES = BASE_DIR / "nisar_changes.jsonl"
 ANALYST_NOTES_LOG = BASE_DIR / "analyst_notes.jsonl"
 AIRCRAFT_LOGS = [
     BASE_DIR / "aircraft_detections.jsonl",
@@ -58,7 +60,7 @@ PRIORITY_1_KEYS = {
     "thitu_island",
 }
 
-SCENE_PATTERN = re.compile(r"^(?P<key>.+?)_(?P<source>planet|sentinel2|modis)_(?P<date>\d{4}-\d{2}-\d{2})\.(?:png|jpg|jpeg|tif|tiff)$")
+SCENE_PATTERN = re.compile(r"^(?P<key>.+?)_(?P<source>planet|sentinel2|modis|nisar_gslc|nisar_gcov)_(?P<date>\d{4}-\d{2}-\d{2})\.(?:png|jpg|jpeg|tif|tiff|h5)$")
 RECENT_SCENE_WINDOW = timedelta(hours=72)
 RECENT_TRAFFIC_WINDOW = timedelta(hours=24)
 SECRET_KEY_MARKERS = (
@@ -202,9 +204,21 @@ def build_planet_fetch_index() -> dict[tuple[str, str], dict[str, Any]]:
     return indexed
 
 
+def build_nisar_fetch_index() -> dict[tuple[str, str], dict[str, Any]]:
+    indexed: dict[tuple[str, str], dict[str, Any]] = {}
+    for raw in load_jsonl(NISAR_FETCH_LOG):
+        feature_key = raw.get("feature") or raw.get("feature_key")
+        published_date = raw.get("date")
+        if not feature_key or not published_date:
+            continue
+        indexed[(feature_key, published_date)] = raw
+    return indexed
+
+
 def export_scenes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     planet_fetch_index = build_planet_fetch_index()
+    nisar_fetch_index = build_nisar_fetch_index()
     if IMAGERY_DIR.exists():
         for path in sorted(IMAGERY_DIR.iterdir()):
             if not path.is_file():
@@ -221,14 +235,22 @@ def export_scenes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str, 
             asset_kind = "image"
             if source == "planet":
                 asset_kind = "thumbnail"
-            resolution = {"planet": 4, "sentinel2": 10, "modis": 250}.get(source)
-            fetch_row = planet_fetch_index.get((feature_key, captured_date), {}) if source == "planet" else {}
+            elif source == "nisar_gslc":
+                asset_kind = "sar_complex"
+            elif source == "nisar_gcov":
+                asset_kind = "sar_backscatter"
+            resolution = {"planet": 4, "sentinel2": 10, "modis": 250, "nisar_gslc": 5, "nisar_gcov": 20}.get(source)
+            fetch_row = {}
+            if source == "planet":
+                fetch_row = planet_fetch_index.get((feature_key, captured_date), {})
+            elif source.startswith("nisar"):
+                fetch_row = nisar_fetch_index.get((feature_key, captured_date), {})
             rows.append(
                 {
                     "id": f"scene:{source}:{feature_key}:{captured_date}",
                     "featureId": f"feature:{feature_key}",
                     "source": source,
-                    "providerSceneId": fetch_row.get("item_id") or fetch_row.get("provider_scene_id"),
+                    "providerSceneId": fetch_row.get("granule_id") or fetch_row.get("item_id") or fetch_row.get("provider_scene_id"),
                     "capturedAt": fetch_row.get("capturedAt") or fetch_row.get("acquired") or f"{captured_date}T00:00:00Z",
                     "publishedDate": captured_date,
                     "assetKind": asset_kind,
@@ -239,6 +261,9 @@ def export_scenes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str, 
                     "status": fetch_row.get("status") or "ready",
                     "format": ext.lstrip("."),
                     "bytes": path.stat().st_size,
+                    "polarization": fetch_row.get("polarization"),
+                    "orbit": fetch_row.get("orbit"),
+                    "orbitDirection": fetch_row.get("direction") or fetch_row.get("orbitDirection"),
                 }
             )
     write_jsonl(DERIVED_DIR / "scenes.jsonl", rows)
@@ -298,6 +323,38 @@ def export_changes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str,
                 "raw": sanitize_secret_safe(raw),
             }
         )
+
+    for raw in load_jsonl(NISAR_CHANGES):
+        feature_key = raw.get("feature") or raw.get("feature_key")
+        if feature_key not in features_by_key:
+            continue
+        before_date = raw.get("date_previous")
+        after_date = raw.get("date_current")
+        if not before_date or not after_date:
+            continue
+        source = raw.get("product_type", "nisar_gslc")
+        rows.append(
+            {
+                "id": f"change:{feature_key}:{before_date}:{after_date}",
+                "featureId": f"feature:{feature_key}",
+                "source": f"nisar_{source}",
+                "beforeSceneId": f"scene:nisar_{source}:{feature_key}:{before_date}",
+                "afterSceneId": f"scene:nisar_{source}:{feature_key}:{after_date}",
+                "detectedAt": raw.get("timestamp") or now_iso(),
+                "classification": raw.get("change_types", ["significant_change"])[0] if raw.get("change_types") else "significant_change",
+                "confidence": raw.get("confidence"),
+                "metrics": {
+                    "amplitudeChangePct": raw.get("amplitude_change", {}).get("change_percent"),
+                    "amplitudeMeanIncreaseDb": raw.get("amplitude_change", {}).get("mean_increase_db"),
+                    "amplitudeMeanDecreaseDb": raw.get("amplitude_change", {}).get("mean_decrease_db"),
+                    "coherenceMean": (raw.get("coherence_change") or {}).get("coherence_mean"),
+                    "coherenceDecorrelatedPct": (raw.get("coherence_change") or {}).get("significant_decorrelated_percent"),
+                },
+                "reviewStatus": "pending" if raw.get("changed") else "dismissed",
+                "raw": sanitize_secret_safe(raw),
+            }
+        )
+
     write_jsonl(DERIVED_DIR / "changes.jsonl", rows)
     return rows
 
@@ -666,9 +723,13 @@ def export_source_health(
     planet_rows = scenes_by_source.get("planet", [])
     sentinel_rows = scenes_by_source.get("sentinel2", [])
     modis_rows = scenes_by_source.get("modis", [])
+    nisar_gslc_rows = scenes_by_source.get("nisar_gslc", [])
+    nisar_gcov_rows = scenes_by_source.get("nisar_gcov", [])
     recent_planet_count = sum(1 for row in planet_rows if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW))
     recent_sentinel_count = sum(1 for row in sentinel_rows if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW))
     recent_modis_count = sum(1 for row in modis_rows if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW))
+    recent_nisar_gslc_count = sum(1 for row in nisar_gslc_rows if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW))
+    recent_nisar_gcov_count = sum(1 for row in nisar_gcov_rows if is_recent(row.get("capturedAt"), RECENT_SCENE_WINDOW))
     recent_traffic_count = sum(1 for row in traffic if is_recent(row.get("capturedAt"), RECENT_TRAFFIC_WINDOW))
     payload = {
         "generatedAt": now_iso(),
@@ -707,6 +768,30 @@ def export_source_health(
                 "recentSceneCount72h": recent_modis_count,
                 "coverage": summarize_source_scene_coverage(modis_rows),
                 "status": source_status(True, source_counts.get("modis", 0), recent_modis_count),
+            },
+            "nisar_gslc": {
+                "configured": True,
+                "secretSafe": True,
+                "latestFetchAt": latest_timestamp(load_jsonl(NISAR_FETCH_LOG), keys=("timestamp",)),
+                "latestSceneAt": latest_timestamp(nisar_gslc_rows, keys=("capturedAt", "publishedDate")),
+                "sceneCount": source_counts.get("nisar_gslc", 0),
+                "recentSceneCount72h": recent_nisar_gslc_count,
+                "coverage": summarize_source_scene_coverage(nisar_gslc_rows),
+                "changeCount": sum(1 for row in changes if row.get("source", "").startswith("nisar_gslc")),
+                "pendingChangeCount": sum(1 for row in changes if row.get("source", "").startswith("nisar_gslc") and row.get("reviewStatus") == "pending"),
+                "status": source_status(True, source_counts.get("nisar_gslc", 0), recent_nisar_gslc_count),
+            },
+            "nisar_gcov": {
+                "configured": True,
+                "secretSafe": True,
+                "latestFetchAt": latest_timestamp(load_jsonl(NISAR_FETCH_LOG), keys=("timestamp",)),
+                "latestSceneAt": latest_timestamp(nisar_gcov_rows, keys=("capturedAt", "publishedDate")),
+                "sceneCount": source_counts.get("nisar_gcov", 0),
+                "recentSceneCount72h": recent_nisar_gcov_count,
+                "coverage": summarize_source_scene_coverage(nisar_gcov_rows),
+                "changeCount": sum(1 for row in changes if row.get("source", "").startswith("nisar_gcov")),
+                "pendingChangeCount": sum(1 for row in changes if row.get("source", "").startswith("nisar_gcov") and row.get("reviewStatus") == "pending"),
+                "status": source_status(True, source_counts.get("nisar_gcov", 0), recent_nisar_gcov_count),
             },
             "traffic": {
                 "configured": True,

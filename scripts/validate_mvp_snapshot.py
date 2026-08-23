@@ -50,8 +50,21 @@ PLANET_HEALTH_REQUIRED_KEYS = {
     "pendingChangeCount",
     "status",
 }
+NISAR_HEALTH_REQUIRED_KEYS = {
+    "configured",
+    "secretSafe",
+    "latestFetchAt",
+    "latestSceneAt",
+    "sceneCount",
+    "recentSceneCount72h",
+    "coverage",
+    "changeCount",
+    "pendingChangeCount",
+    "status",
+}
 
 VALID_PLANET_QUALITY_VALUES = {"standard", "test"}
+VALID_NISAR_STATUS_VALUES = {"ready", "configured_no_data", "stale", "missing_config"}
 FORBIDDEN_SECRET_MARKERS = ["api_key", "planet_api_key", "authorization", "basic "]
 PLACEHOLDER_PREFIXES = ("your_", "replace_", "example", "changeme")
 
@@ -169,6 +182,17 @@ def main() -> int:
             + ", ".join(sorted(VALID_PLANET_QUALITY_VALUES))
         )
 
+    for nisar_key in ("nisar_gslc", "nisar_gcov"):
+        if nisar_key in sources:
+            assert_keys(sources[nisar_key], NISAR_HEALTH_REQUIRED_KEYS, f"source_health.sources.{nisar_key}")
+            if sources[nisar_key].get("secretSafe") is not True:
+                raise ValidationError(f"source_health.sources.{nisar_key}.secretSafe must be true")
+            if sources[nisar_key].get("status") not in VALID_NISAR_STATUS_VALUES:
+                raise ValidationError(
+                    f"source_health.sources.{nisar_key}.status must be one of: "
+                    + ", ".join(sorted(VALID_NISAR_STATUS_VALUES))
+                )
+
     assert_no_secret_strings(source_health, "source_health.json")
     assert_no_secret_strings(overview, "overview.json")
     assert_no_secret_strings(review_queue, "review_queue.json")
@@ -201,6 +225,10 @@ def main() -> int:
     print(f"- notes: {len(notes)}")
     print(f"- review_queue_items: {len(review_queue.get('items', []))}")
     print(f"- planet_configured: {sources['planet']['configured']}")
+    if "nisar_gslc" in sources:
+        print(f"- nisar_gslc_status: {sources['nisar_gslc']['status']} ({sources['nisar_gslc']['sceneCount']} scenes)")
+    if "nisar_gcov" in sources:
+        print(f"- nisar_gcov_status: {sources['nisar_gcov']['status']} ({sources['nisar_gcov']['sceneCount']} scenes)")
     print(f"- env_example_safe: yes")
     return 0
 
