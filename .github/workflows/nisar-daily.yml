@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '30 6 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
     inputs:
       feature:
         description: 'Specific feature to fetch (optional)'
