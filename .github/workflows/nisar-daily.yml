@@ -102,7 +102,7 @@ jobs:
           echo "**Product**: ${{ github.event.inputs.product || 'both' }}" >> $GITHUB_STEP_SUMMARY
           echo "**Lookback**: ${{ github.event.inputs.days || 14 }} days" >> $GITHUB_STEP_SUMMARY
           if [ -f derived/overview.json ]; then
-            cat > /tmp/summary_overview.py << 'PYEOF'
+            tee /tmp/summary_overview.py > /dev/null << 'PYEOF'
 import json
 with open('derived/overview.json') as f:
     o = json.load(f)
@@ -114,7 +114,7 @@ PYEOF
             python3 /tmp/summary_overview.py >> $GITHUB_STEP_SUMMARY
           fi
           if [ -f derived/source_health.json ]; then
-            cat > /tmp/summary_health.py << 'PYEOF'
+            tee /tmp/summary_health.py > /dev/null << 'PYEOF'
 import json
 with open('derived/source_health.json') as f:
     h = json.load(f)
