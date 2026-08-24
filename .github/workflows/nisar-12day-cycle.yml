@@ -56,7 +56,13 @@ jobs:
 
       - name: Update repository
         run: |
-          git pull origin main
+          cd /data/gpfs/projects/punim1990/haninhn/ReefWatch
+          if [ ! -d .git ]; then
+            git init
+            git remote add origin https://github.com/NinhGhoster/ReefWatch.git
+          fi
+          git fetch origin main
+          git reset --hard origin/main
 
       - name: Configure Earthdata credentials
         run: |
@@ -112,7 +118,13 @@ jobs:
 
       - name: Update repository
         run: |
-          git pull origin main
+          cd /data/gpfs/projects/punim1990/haninhn/ReefWatch
+          if [ ! -d .git ]; then
+            git init
+            git remote add origin https://github.com/NinhGhoster/ReefWatch.git
+          fi
+          git fetch origin main
+          git reset --hard origin/main
 
       - name: Process NISAR GCOV (HH + HV)
         run: |
@@ -153,7 +165,13 @@ jobs:
 
       - name: Update repository
         run: |
-          git pull origin main
+          cd /data/gpfs/projects/punim1990/haninhn/ReefWatch
+          if [ ! -d .git ]; then
+            git init
+            git remote add origin https://github.com/NinhGhoster/ReefWatch.git
+          fi
+          git fetch origin main
+          git reset --hard origin/main
 
       - name: Install dask for chunked processing
         run: pip install dask
