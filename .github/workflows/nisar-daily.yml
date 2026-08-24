@@ -39,6 +39,7 @@ jobs:
 
       - name: Configure Earthdata credentials
         run: |
+          rm -rf ~/.netrc
           mkdir -p ~/.netrc
           echo "machine urs.earthdata.nasa.gov login ${{ secrets.EARTHDATA_USERNAME }} password ${{ secrets.EARTHDATA_PASSWORD }}" > ~/.netrc
           chmod 600 ~/.netrc
