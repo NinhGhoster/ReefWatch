@@ -102,46 +102,24 @@ jobs:
           echo "**Product**: ${{ github.event.inputs.product || 'both' }}" >> $GITHUB_STEP_SUMMARY
           echo "**Lookback**: ${{ github.event.inputs.days || 14 }} days" >> $GITHUB_STEP_SUMMARY
           if [ -f derived/overview.json ]; then
-            python3 -c "
-            import json
-            with open('derived/overview.json') as f:
-              o = json.load(f)
-            print(f\"**Features**: {o['counts']['features']}\")
-            print(f\"**Scenes (72h)**: {o['counts']['recentScenes72h']}\")
-            print(f\"**Changes**: {o['counts']['changes']}\")
-            print(f\"**Pending Review**: {o['counts']['pendingChanges']}\")
-            " >> $GITHUB_STEP_SUMMARY
+            python3 << 'PYEOF' >> $GITHUB_STEP_SUMMARY
+import json
+with open('derived/overview.json') as f:
+    o = json.load(f)
+print(f"**Features**: {o['counts']['features']}")
+print(f"**Scenes (72h)**: {o['counts']['recentScenes72h']}")
+print(f"**Changes**: {o['counts']['changes']}")
+print(f"**Pending Review**: {o['counts']['pendingChanges']}")
+PYEOF
           fi
           if [ -f derived/source_health.json ]; then
-            python3 -c "
-            import json
-            with open('derived/source_health.json') as f:
-              h = json.load(f)
-            for src in ['nisar_gslc', 'nisar_gcov']:
-              if src in h['sources']:
-                s = h['sources'][src]
-                print(f\"**{src.upper()}**: {s['status']} ({s['sceneCount']} total, {s['recentSceneCount72h']} recent)\")
-            " >> $GITHUB_STEP_SUMMARY
-          fi
-          if [ -f derived/source_health.json ]; then
-            python3 -c "
-            import json
-            with open('derived/source_health.json') as f:
-              h = json.load(f)
-            for src in ['nisar_gslc', 'nisar_gcov']:
-              if src in h['sources']:
-                s = h['sources'][src]
-                print(f\"**{src.upper()}**: {s['status']} ({s['sceneCount']} total, {s['recentSceneCount72h']} recent)\")
-            " >> $GITHUB_STEP_SUMMARY
-          fi
-          if [ -f derived/source_health.json ]; then
-            python3 -c "
-            import json
-            with open('derived/source_health.json') as f:
-              h = json.load(f)
-            for src in ['nisar_gslc', 'nisar_gcov']:
-              if src in h['sources']:
-                s = h['sources'][src]
-                print(f\"**{src.upper()}**: {s['status']} ({s['sceneCount']} total, {s['recentSceneCount72h']} recent)\")
-            " >> $GITHUB_STEP_SUMMARY
+            python3 << 'PYEOF' >> $GITHUB_STEP_SUMMARY
+import json
+with open('derived/source_health.json') as f:
+    h = json.load(f)
+for src in ['nisar_gslc', 'nisar_gcov']:
+    if src in h['sources']:
+        s = h['sources'][src]
+        print(f"**{src.upper()}**: {s['status']} ({s['sceneCount']} total, {s['recentSceneCount72h']} recent)")
+PYEOF
           fi
