@@ -102,26 +102,8 @@ jobs:
           echo "**Product**: ${{ github.event.inputs.product || 'both' }}" >> $GITHUB_STEP_SUMMARY
           echo "**Lookback**: ${{ github.event.inputs.days || 14 }} days" >> $GITHUB_STEP_SUMMARY
           if [ -f derived/overview.json ]; then
-            tee /tmp/summary_overview.py > /dev/null << 'PYEOF'
-import json
-with open('derived/overview.json') as f:
-    o = json.load(f)
-print(f"**Features**: {o['counts']['features']}")
-print(f"**Scenes (72h)**: {o['counts']['recentScenes72h']}")
-print(f"**Changes**: {o['counts']['changes']}")
-print(f"**Pending Review**: {o['counts']['pendingChanges']}")
-PYEOF
-            python3 /tmp/summary_overview.py >> $GITHUB_STEP_SUMMARY
+            python3 -c "import json; f=open('derived/overview.json'); o=json.load(f); f.close(); print(f'**Features**: {o[\"counts\"][\"features\"]}'); print(f'**Scenes (72h)**: {o[\"counts\"][\"recentScenes72h\"]}'); print(f'**Changes**: {o[\"counts\"][\"changes\"]}'); print(f'**Pending Review**: {o[\"counts\"][\"pendingChanges\"]}')" >> $GITHUB_STEP_SUMMARY
           fi
           if [ -f derived/source_health.json ]; then
-            tee /tmp/summary_health.py > /dev/null << 'PYEOF'
-import json
-with open('derived/source_health.json') as f:
-    h = json.load(f)
-for src in ['nisar_gslc', 'nisar_gcov']:
-    if src in h['sources']:
-        s = h['sources'][src]
-        print(f"**{src.upper()}**: {s['status']} ({s['sceneCount']} total, {s['recentSceneCount72h']} recent)")
-PYEOF
-            python3 /tmp/summary_health.py >> $GITHUB_STEP_SUMMARY
+            python3 -c "import json; f=open('derived/source_health.json'); h=json.load(f); f.close(); [print(f'**{src.upper()}**: {h[\"sources\"][src][\"status\"]} ({h[\"sources\"][src][\"sceneCount\"]} total, {h[\"sources\"][src][\"recentSceneCount72h\"]} recent)') for src in ['nisar_gslc','nisar_gcov'] if src in h['sources']]" >> $GITHUB_STEP_SUMMARY
           fi
