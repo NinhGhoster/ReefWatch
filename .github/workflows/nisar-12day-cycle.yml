@@ -54,6 +54,10 @@ jobs:
           source /apps/easybuild-2022/easybuild/software/Core/Mambaforge/23.1.0-4/etc/profile.d/conda.sh
           conda activate /data/gpfs/projects/punim1990/haninhn/nisar_envs/reefwatch
 
+      - name: Update repository
+        run: |
+          git pull origin main
+
       - name: Configure Earthdata credentials
         run: |
           rm -rf ~/.netrc
@@ -106,6 +110,10 @@ jobs:
           source /apps/easybuild-2022/easybuild/software/Core/Mambaforge/23.1.0-4/etc/profile.d/conda.sh
           conda activate /data/gpfs/projects/punim1990/haninhn/nisar_envs/reefwatch
 
+      - name: Update repository
+        run: |
+          git pull origin main
+
       - name: Process NISAR GCOV (HH + HV)
         run: |
           python3 scripts/nisar_processor.py \
@@ -142,6 +150,10 @@ jobs:
         run: |
           source /apps/easybuild-2022/easybuild/software/Core/Mambaforge/23.1.0-4/etc/profile.d/conda.sh
           conda activate /data/gpfs/projects/punim1990/haninhn/nisar_envs/reefwatch
+
+      - name: Update repository
+        run: |
+          git pull origin main
 
       - name: Install dask for chunked processing
         run: pip install dask
