@@ -186,8 +186,8 @@ jobs:
           python3 scripts/nisar_coherence_chunked.py \
             --all \
             --polarization HH \
-            --tile-size 512 \
-            --overlap 64 \
+            --tile-size 256 \
+            --overlap 32 \
             --changelog
 
       - name: Upload coherence results
