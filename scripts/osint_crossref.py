@@ -363,7 +363,10 @@ def main():
     changes = load_changes()
     if not changes:
         print("No NISAR changes found. Run nisar_processor.py first.")
-        sys.exit(1)
+        # Don't exit with error - just create empty report
+        results = []
+        generate_osint_report(results)
+        return
 
     # Deduplicate
     seen = set()

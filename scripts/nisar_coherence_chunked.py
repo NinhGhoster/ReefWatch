@@ -324,18 +324,35 @@ def run_changelog(feature_key, polarization="HH", tile_size=1024, overlap=128):
 
 def main():
     parser = argparse.ArgumentParser(description="NISAR GSLC Chunked Coherence Processor")
-    parser.add_argument("--feature", required=True, help="Feature key to process")
+    parser.add_argument("--feature", help="Feature key to process (required unless --all)")
+    parser.add_argument("--all", action="store_true", help="Process all features")
     parser.add_argument("--polarization", default="HH", help="Polarization (HH, HV, VV, VH)")
     parser.add_argument("--tile-size", type=int, default=1024, help="Tile size for chunked processing")
     parser.add_argument("--overlap", type=int, default=128, help="Overlap between tiles")
     parser.add_argument("--changelog", action="store_true", help="Run changelog classification")
     args = parser.parse_args()
 
+    if not args.all and not args.feature:
+        parser.error("--feature is required unless --all is specified")
+
     if args.changelog:
-        run_changelog(args.feature, args.polarization, args.tile_size, args.overlap)
+        if args.all:
+            run_all_changelog(args.polarization, args.tile_size, args.overlap)
+        else:
+            run_changelog(args.feature, args.polarization, args.tile_size, args.overlap)
     else:
         parser.print_help()
         sys.exit(1)
+
+
+def run_all_changelog(polarization, tile_size, overlap):
+    """Run changelog for all features."""
+    db = load_features()
+    features = get_all_features(db)
+    print(f"Processing {len(features)} features for coherence changelog...")
+    for feat_key, feat_info in features:
+        print(f"\n=== {feat_key} ===")
+        run_changelog(feat_key, polarization, tile_size, overlap)
 
 
 if __name__ == "__main__":
