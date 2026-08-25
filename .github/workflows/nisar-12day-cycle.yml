@@ -131,7 +131,7 @@ jobs:
           python3 scripts/nisar_processor.py \
             --all \
             --product gcov \
-            --polarization HH HV \
+            --polarization HH,HV \
             --changelog
 
       - name: Upload change logs
