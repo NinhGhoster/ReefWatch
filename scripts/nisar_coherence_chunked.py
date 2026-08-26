@@ -86,7 +86,7 @@ def compute_local_coherence(s1_tile, s2_tile, window=5):
 
 
 def compute_coherence_chunked(path1, path2, polarization="HH", tile_size=1024, overlap=128):
-    """Compute interferometric coherence using chunked processing with xarray."""
+    """Compute interferometric coherence using chunked processing with disk-backed arrays."""
     print(f"  Opening {os.path.basename(path1)}...")
     dt1 = xr.open_datatree(path1, engine="h5netcdf", phony_dims="sort")
     print(f"  Opening {os.path.basename(path2)}...")
@@ -120,54 +120,97 @@ def compute_coherence_chunked(path1, path2, polarization="HH", tile_size=1024, o
     height, width = s1_chunked.sizes[dim_y], s1_chunked.sizes[dim_x]
     print(f"  Image size: {width}x{height}, tile_size={tile_size}, overlap={overlap}")
 
-    # Initialize output array (use float32 to save memory)
-    coherence_full = np.zeros((height, width), dtype=np.float32)
-    count_full = np.zeros((height, width), dtype=np.uint16)
+    # Use memory-mapped arrays on disk to avoid OOM
+    # Create temp files for memory-mapped arrays
+    import tempfile
+    tmpdir = tempfile.gettempdir()
+    coh_file = os.path.join(tmpdir, f"coherence_{os.getpid()}.mmap")
+    cnt_file = os.path.join(tmpdir, f"count_{os.getpid()}.mmap")
+    
+    # Create memory-mapped arrays (on disk, not in RAM)
+    coherence_full = np.memmap(coh_file, dtype=np.float32, mode='w+', shape=(height, width))
+    count_full = np.memmap(cnt_file, dtype=np.uint16, mode='w+', shape=(height, width))
+    
+    try:
+        # Chunk the data using correct dimension names
+        s1_chunked = s1_da.chunk({dim_x: tile_size, dim_y: tile_size})
+        s2_chunked = s2_da.chunk({dim_x: tile_size, dim_y: tile_size})
 
-    # Process in tiles
-    step = tile_size - overlap
-    tiles_y = range(0, height, step)
-    tiles_x = range(0, width, step)
+        height, width = s1_chunked.sizes[dim_y], s1_chunked.sizes[dim_x]
+        print(f"  Image size: {width}x{height}, tile_size={tile_size}, overlap={overlap}")
 
-    total_tiles = len(tiles_y) * len(tiles_x)
-    print(f"  Processing {total_tiles} tiles...")
+        # Process in tiles
+        step = tile_size - overlap
+        tiles_y = range(0, height, step)
+        tiles_x = range(0, width, step)
 
-    tile_count = 0
-    for y in tiles_y:
-        y_end = min(y + tile_size, height)
-        for x in tiles_x:
-            x_end = min(x + tile_size, width)
-            tile_count += 1
+        total_tiles = len(list(tiles_y)) * len(list(tiles_x))
+        print(f"  Processing {total_tiles} tiles...")
 
-            if tile_count % 50 == 0:
-                print(f"    Tile {tile_count}/{total_tiles} ({y}:{y_end}, {x}:{x_end})")
+        tile_count = 0
+        tiles_y = range(0, height, step)
+        tiles_x = range(0, width, step)
+        
+        for y in tiles_y:
+            y_end = min(y + tile_size, height)
+            for x in tiles_x:
+                x_end = min(x + tile_size, width)
+                tile_count += 1
 
-            # Load tile data (compute to load from disk)
-            tile1 = s1_chunked.isel({dim_y: slice(y, y_end), dim_x: slice(x, x_end)}).compute().values
-            tile2 = s2_chunked.isel({dim_y: slice(y, y_end), dim_x: slice(x, x_end)}).compute().values
+                if tile_count % 50 == 0:
+                    print(f"    Tile {tile_count} ({y}:{y_end}, {x}:{x_end})")
 
-            if tile1.size == 0 or tile2.size == 0:
-                continue
+                # Load tile data (compute to load from disk)
+                tile1 = s1_chunked.isel({dim_y: slice(y, y_end), dim_x: slice(x, x_end)}).compute().values
+                tile2 = s2_chunked.isel({dim_y: slice(y, y_end), dim_x: slice(x, x_end)}).compute().values
 
-            coh = compute_local_coherence(tile1, tile2)
-            if coh is None:
-                continue
+                if tile1.size == 0 or tile2.size == 0:
+                    continue
 
-            # Write to output (handle overlap by averaging)
-            h, w = coh.shape
-            coherence_full[y:y+h, x:x+w] += coh
-            count_full[y:y+h, x:x+w] += 1
+                coh = compute_local_coherence(tile1, tile2)
+                if coh is None:
+                    continue
 
-    # Average overlapping regions
-    valid = count_full > 0
-    coherence_full[valid] = coherence_full[valid] / count_full[valid]
-    coherence_full[~valid] = np.nan
+                # Write to memory-mapped arrays (on disk)
+                h, w = coh.shape
+                coherence_full[y:y+h, x:x+w] += coh
+                count_full[y:y+h, x:x+w] += 1
 
-    # Close datatrees to release memory
-    dt1.close()
-    dt2.close()
+                # Flush periodically to ensure data is written to disk
+                if tile_count % 100 == 0:
+                    coherence_full.flush()
+                    count_full.flush()
 
-    return coherence_full
+        # Average overlapping regions (in chunks to avoid loading all at once)
+        print("  Averaging overlapping regions...")
+        valid = count_full > 0
+        coherence_full[valid] = coherence_full[valid] / count_full[valid]
+        coherence_full[~valid] = np.nan
+        
+        # Flush final results
+        coherence_full.flush()
+        count_full.flush()
+        
+        # Convert to regular array for return (only the final result)
+        result = np.array(coherence_full)
+        
+    finally:
+        # Close datatrees to release memory
+        dt1.close()
+        dt2.close()
+        # Clean up memmap files
+        try:
+            coherence_full.flush()
+            count_full.flush()
+            del coherence_full
+            del count_full
+            os.unlink(coh_file)
+            os.unlink(cnt_file)
+        except:
+            pass
+        gc.collect()
+
+    return result
 
 
 def detect_change_coherence(coherence, threshold=COHERENCE_THRESHOLD, min_area=MIN_CHANGE_AREA_PIXELS):
