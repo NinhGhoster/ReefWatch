@@ -11,6 +11,7 @@ Usage:
 """
 
 import argparse
+import gc
 import json
 import os
 import sys
@@ -91,14 +92,16 @@ def compute_coherence_chunked(path1, path2, polarization="HH", tile_size=1024, o
     print(f"  Opening {os.path.basename(path2)}...")
     dt2 = xr.open_datatree(path2, engine="h5netcdf", phony_dims="sort")
 
-    # Extract polarization data from GSLC grids
-    # Path: /science/LSAR/GSLC/grids/frequencyA/{polarization}
     try:
+        # Extract polarization data from GSLC grids
+        # Path: /science/LSAR/GSLC/grids/frequencyA/{polarization}
         s1_da = dt1["/science/LSAR/GSLC/grids/frequencyA"][polarization]
         s2_da = dt2["/science/LSAR/GSLC/grids/frequencyA"][polarization]
     except KeyError:
         available = list(dt1["/science/LSAR/GSLC/grids/frequencyA"].data_vars.keys())
         print(f"  [WARN] Polarization {polarization} not found. Available: {available}")
+        dt1.close()
+        dt2.close()
         return None
 
     # Get actual dimension names (they use 'xCoordinates' and 'yCoordinates')
@@ -106,6 +109,8 @@ def compute_coherence_chunked(path1, path2, polarization="HH", tile_size=1024, o
     dim_x = 'xCoordinates'
     if dim_y not in s1_da.dims or dim_x not in s1_da.dims:
         print(f"  [ERROR] Unexpected dimensions: {s1_da.dims}")
+        dt1.close()
+        dt2.close()
         return None
 
     # Chunk the data using correct dimension names
@@ -157,6 +162,10 @@ def compute_coherence_chunked(path1, path2, polarization="HH", tile_size=1024, o
     valid = count_full > 0
     coherence_full[valid] = coherence_full[valid] / count_full[valid]
     coherence_full[~valid] = np.nan
+
+    # Close datatrees to release memory
+    dt1.close()
+    dt2.close()
 
     return coherence_full
 
@@ -267,9 +276,17 @@ def run_changelog(feature_key, polarization="HH", tile_size=1024, overlap=128):
     if db1 is not None and db2 is not None:
         amp_result = detect_change_amplitude(db1, db2)
 
+    # Explicit cleanup of amplitude data
+    del db1, db2
+    gc.collect()
+
     # Coherence change detection
     print(f"  Detecting coherence changes...")
     coh_result = detect_change_coherence(coherence)
+
+    # Explicit cleanup of coherence array
+    del coherence
+    gc.collect()
 
     # Classification
     change_types = classify_sar_change(amp_result, coh_result)
@@ -321,6 +338,10 @@ def run_changelog(feature_key, polarization="HH", tile_size=1024, overlap=128):
 
     append_to_changelog(result)
 
+    # Cleanup
+    del amp_result, coh_result, result
+    gc.collect()
+
 
 def main():
     parser = argparse.ArgumentParser(description="NISAR GSLC Chunked Coherence Processor")
@@ -350,9 +371,12 @@ def run_all_changelog(polarization, tile_size, overlap):
     db = load_features()
     features = get_all_features(db)
     print(f"Processing {len(features)} features for coherence changelog...")
-    for feat_key, feat_info in features:
-        print(f"\n=== {feat_key} ===")
+    for i, (feat_key, feat_info) in enumerate(features):
+        print(f"\n=== {feat_key} ({i+1}/{len(features)}) ===")
         run_changelog(feat_key, polarization, tile_size, overlap)
+        # Force garbage collection between features to prevent OOM
+        gc.collect()
+        print(f"  [MEM] Cleaned up after {feat_key}")
 
 
 if __name__ == "__main__":
