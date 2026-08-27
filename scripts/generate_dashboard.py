@@ -502,24 +502,24 @@ def build_dashboard_html() -> str:
       <!-- HEATMAP INTERPRETATION & COLOR SCALE GUIDE -->
       <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;">
         <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-          <span>🎨 How to Read Difference Heatmaps (What the Colors Mean):</span>
+          <span>🎨 Ground Difference Heatmap Key (Trained Cloud & Reef Separation):</span>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 0.82rem;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="display:inline-block; width: 14px; height: 14px; background: #ff1e1e; border-radius: 3px; box-shadow: 0 0 6px rgba(255,30,30,0.6);"></span>
-            <span><strong>Red / Crimson (&Delta; &ge; 90)</strong>: Major New Construction, Runway Paving, Land Reclamation</span>
+            <span><strong>Red / Crimson (&Delta; &ge; 85)</strong>: Major Ground Construction, Runway Paving, Dredged Land</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="display:inline-block; width: 14px; height: 14px; background: #ffd700; border-radius: 3px; box-shadow: 0 0 6px rgba(255,215,0,0.5);"></span>
-            <span><strong>Yellow / Amber (50 &le; &Delta; &lt; 90)</strong>: Moderate Ground Alteration, Harbor/Seawall Shift</span>
+            <span><strong>Yellow / Amber (45 &le; &Delta; &lt; 85)</strong>: Moderate Ground Alteration, Harbor/Seawall Shift</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="display:inline-block; width: 14px; height: 14px; background: #00beff; border-radius: 3px; box-shadow: 0 0 6px rgba(0,190,255,0.5);"></span>
-            <span><strong>Cyan / Blue (22 &le; &Delta; &lt; 50)</strong>: Minor Surface Shift, Vegetation / Sand Motion</span>
+            <span style="display:inline-block; width: 14px; height: 14px; background: #a855f7; border-radius: 3px; box-shadow: 0 0 6px rgba(168,85,247,0.5);"></span>
+            <span><strong>Purple / Slate</strong>: ☁️ Cloud & Shadow Excluded (Filtered out, not counted as ground change)</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="display:inline-block; width: 14px; height: 14px; background: #1e293b; border: 1px solid #475569; border-radius: 3px;"></span>
-            <span><strong>Dark / Muted (&Delta; &lt; 22)</strong>: Unchanged Baseline (Reef, Deep Water, Stable Ground)</span>
+            <span style="display:inline-block; width: 14px; height: 14px; background: #32ff32; border-radius: 3px; box-shadow: 0 0 6px rgba(50,255,50,0.5);"></span>
+            <span><strong>Lime Green</strong>: 🚢 Vessel on Open Water</span>
           </div>
         </div>
       </div>

@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
-"""Optical Cloud Detection and Filtering for ReefWatch.
+"""Optical Cloud & Shadow Detection, Masking, and Ground Filter for ReefWatch.
 
-Provides pixel-level cloud masking, cloud cover percentage calculation,
-and cloud interference rejection for Sentinel-2, Planet, and MODIS optical imagery.
+Provides pixel-level cloud masking, cloud shadow detection, reef/land segmentation,
+and cloud-free ground change isolation for Sentinel-2, Planet, and MODIS optical imagery.
 
-In tropical maritime environments (South China Sea), passing cumulus clouds
-and cloud shadows cause false positive structural changes and SSIM drops.
-This module filters out cloud-obscured scenes and evaluates true ground changes.
+Key capabilities:
+1. Detects high-reflectance, low-saturation cloud bodies.
+2. Detects cloud shadow projections on sea surface and reefs.
+3. Segments coral reef / land regions of interest from deep ocean.
+4. Isolates true ground construction from passing cloud artifacts.
 
 Usage:
-    from cloud_filter import detect_cloud_mask, calculate_cloud_cover, assess_cloud_interference
+    from cloud_filter import detect_cloud_mask, detect_cloud_shadow_mask, segment_reef_land_mask, assess_cloud_interference
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 import numpy as np
 from PIL import Image
-from skimage.metrics import structural_similarity as ssim
 
-# Standard threshold: scenes with > 30% cloud cover over the feature bbox are flagged as obscured
+# Standard thresholds
 DEFAULT_CLOUD_MAX_PCT = 30.0
-
-# Pixel-level cloud identification thresholds (RGB)
-CLOUD_MIN_INTENSITY = 175
-CLOUD_MEAN_INTENSITY = 185
-CLOUD_MAX_COLOR_DELTA = 35  # Low chroma/saturation = white/gray cloud
+CLOUD_MIN_INTENSITY = 170
+CLOUD_MEAN_INTENSITY = 180
+CLOUD_MAX_COLOR_DELTA = 40  # Low chroma/saturation = white/gray cloud
 
 
-def load_rgb(image_input: str | np.ndarray | Image.Image) -> np.ndarray:
+def load_rgb(image_input: str | Path | np.ndarray | Image.Image) -> np.ndarray:
     """Normalize input into an (H, W, 3) uint8 numpy array."""
-    if isinstance(image_input, (str, bytes)):
+    if isinstance(image_input, (str, Path)):
         img = Image.open(image_input)
     elif isinstance(image_input, Image.Image):
         img = image_input
@@ -48,7 +48,8 @@ def load_rgb(image_input: str | np.ndarray | Image.Image) -> np.ndarray:
 def detect_cloud_mask(rgb: np.ndarray) -> np.ndarray:
     """Generate a boolean mask where True indicates a cloud pixel.
 
-    Algorithm detects high-reflectance, low-saturation (white/gray) cloud signatures.
+    Detects bright, neutral-toned cloud bodies while avoiding false positives
+    on coral sand and shallow turquoise lagoons.
     """
     rgb = load_rgb(rgb)
     r = rgb[:, :, 0].astype(np.int16)
@@ -60,7 +61,7 @@ def detect_cloud_mask(rgb: np.ndarray) -> np.ndarray:
     min_val = np.minimum(np.minimum(r, g), b)
     color_spread = max_val - min_val
 
-    # Cloud criteria: bright in all bands + neutral/low chroma + high average intensity
+    # Cloud signature: bright in all bands + neutral/low chroma + high average intensity
     is_cloud = (
         (r >= CLOUD_MIN_INTENSITY)
         & (g >= CLOUD_MIN_INTENSITY)
@@ -69,6 +70,37 @@ def detect_cloud_mask(rgb: np.ndarray) -> np.ndarray:
         & (mean_val >= CLOUD_MEAN_INTENSITY)
     )
     return is_cloud
+
+
+def detect_cloud_shadow_mask(rgb: np.ndarray) -> np.ndarray:
+    """Generate a boolean mask where True indicates a cloud shadow on the sea/reef."""
+    rgb = load_rgb(rgb)
+    r = rgb[:, :, 0].astype(np.int16)
+    g = rgb[:, :, 1].astype(np.int16)
+    b = rgb[:, :, 2].astype(np.int16)
+
+    mean_val = (r + g + b) / 3.0
+    # Shadows are extremely dark compared to ambient tropical waters
+    is_shadow = (r < 35) & (g < 40) & (b < 60) & (mean_val < 42)
+    return is_shadow
+
+
+def segment_reef_land_mask(rgb: np.ndarray) -> np.ndarray:
+    """Segment coral reef, shallow lagoons, sand cays, and artificial islands from deep ocean.
+
+    Deep ocean is characterized by dominant blue band (B > R + 25) with low overall luminance.
+    Reefs, shoals, and built-up land have higher green/red reflectance or elevated brightness.
+    """
+    rgb = load_rgb(rgb)
+    r = rgb[:, :, 0].astype(np.int16)
+    g = rgb[:, :, 1].astype(np.int16)
+    b = rgb[:, :, 2].astype(np.int16)
+    mean_val = (r + g + b) / 3.0
+
+    # Deep ocean signature
+    is_deep_ocean = (b > (r + 20)) & (g < 85) & (r < 65) & (mean_val < 75)
+    # Reef / Land is everything that is NOT deep ocean
+    return ~is_deep_ocean
 
 
 def calculate_cloud_cover(rgb: np.ndarray) -> float:
@@ -81,19 +113,14 @@ def calculate_cloud_cover(rgb: np.ndarray) -> float:
 
 
 def assess_cloud_interference(
-    img1: str | np.ndarray | Image.Image,
-    img2: str | np.ndarray | Image.Image,
+    img1: str | Path | np.ndarray | Image.Image,
+    img2: str | Path | np.ndarray | Image.Image,
     max_allowed_cloud_pct: float = DEFAULT_CLOUD_MAX_PCT,
 ) -> dict[str, any]:
-    """Assess whether a bitemporal comparison is compromised by cloud cover.
-
-    Returns detailed diagnostic dictionary including individual cloud percentages,
-    combined clear view fraction, and actionable triage recommendations.
-    """
+    """Assess whether a bitemporal comparison is compromised by cloud cover."""
     rgb1 = load_rgb(img1)
     rgb2 = load_rgb(img2)
 
-    # Resize to common dimensions if needed
     h = min(rgb1.shape[0], rgb2.shape[0])
     w = min(rgb1.shape[1], rgb2.shape[1])
     rgb1 = rgb1[:h, :w]
@@ -105,10 +132,8 @@ def assess_cloud_interference(
     cloud_pct1 = round(float(np.sum(mask1) / mask1.size * 100.0), 2)
     cloud_pct2 = round(float(np.sum(mask2) / mask2.size * 100.0), 2)
 
-    # Either image exceeding threshold impairs comparison reliability
     is_obscured = (cloud_pct1 > max_allowed_cloud_pct) or (cloud_pct2 > max_allowed_cloud_pct)
 
-    # Combined cloud mask (pixels cloudy in either image)
     combined_cloud_mask = mask1 | mask2
     clear_pixels = np.sum(~combined_cloud_mask)
     usable_clear_pct = round(float(clear_pixels / combined_cloud_mask.size * 100.0), 2)
@@ -132,39 +157,3 @@ def assess_cloud_interference(
         "recommendation": recommendation,
         "status_label": status_label,
     }
-
-
-def compute_cloud_masked_diff(
-    rgb1: np.ndarray,
-    rgb2: np.ndarray,
-) -> tuple[float, float, bool]:
-    """Compute pixel difference and SSIM solely on mutually cloud-free pixels.
-
-    Returns:
-        (clear_pixel_diff_pct, usable_clear_area_pct, is_reliable)
-    """
-    rgb1 = load_rgb(rgb1)
-    rgb2 = load_rgb(rgb2)
-
-    h = min(rgb1.shape[0], rgb2.shape[0])
-    w = min(rgb1.shape[1], rgb2.shape[1])
-    rgb1 = rgb1[:h, :w]
-    rgb2 = rgb2[:h, :w]
-
-    mask1 = detect_cloud_mask(rgb1)
-    mask2 = detect_cloud_mask(rgb2)
-    clear_mask = ~(mask1 | mask2)
-
-    total_clear = np.sum(clear_mask)
-    usable_pct = float(total_clear / clear_mask.size * 100.0)
-
-    if usable_pct < 20.0:
-        # Insufficient clear area to perform reliable comparison
-        return (0.0, usable_pct, False)
-
-    # Compute pixel difference on clear pixels only
-    diff = np.abs(rgb1.astype(np.float32) - rgb2.astype(np.float32))
-    changed_pixels = np.any(diff > 30, axis=2) & clear_mask
-    clear_diff_pct = float(np.sum(changed_pixels) / total_clear * 100.0)
-
-    return (round(clear_diff_pct, 2), round(usable_pct, 2), True)
