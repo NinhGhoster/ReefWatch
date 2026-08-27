@@ -23,8 +23,9 @@ import time
 from datetime import datetime, timezone
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FEATURES_FILE = os.path.join(SCRIPT_DIR, "scs_features.json")
-MONITOR_LOG = os.path.join(SCRIPT_DIR, "scs_monitor_log.jsonl")
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "scs_features.json")
+MONITOR_LOG = os.path.join(BASE_DIR, "scs_monitor_log.jsonl")
 
 # Import monitoring modules
 sys.path.insert(0, SCRIPT_DIR)

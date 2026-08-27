@@ -22,9 +22,10 @@ from datetime import datetime, timezone
 import requests
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FEATURES_FILE = os.path.join(SCRIPT_DIR, "scs_features.json")
-SHIP_URLS_FILE = os.path.join(SCRIPT_DIR, "ship_urls.json")
-SHIPS_LOG = os.path.join(SCRIPT_DIR, "ships_log.jsonl")
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "scs_features.json")
+SHIP_URLS_FILE = os.path.join(BASE_DIR, "data", "ship_urls.json")
+SHIPS_LOG = os.path.join(BASE_DIR, "ships_log.jsonl")
 
 # Free AIS API endpoints (may require registration or have limited coverage)
 AIS_ENDPOINTS = [

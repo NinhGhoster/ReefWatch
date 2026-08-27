@@ -21,7 +21,8 @@ from datetime import datetime, timezone
 import requests
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FEATURES_FILE = os.path.join(SCRIPT_DIR, "scs_features.json")
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "scs_features.json")
 
 # Spratly + Paracel Islands (combined bbox)
 SCS_LAMIN, SCS_LOMIN, SCS_LAMAX, SCS_LOMAX = 7.0, 109.0, 17.0, 116.0

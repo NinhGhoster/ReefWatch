@@ -12,7 +12,8 @@ import time
 import requests
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FEATURES_FILE = os.path.join(SCRIPT_DIR, "target_features.json")
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "target_features.json")
 BBOX_HALF = 0.15
 API_URL = "https://opensky-network.org/api/states/all"
 

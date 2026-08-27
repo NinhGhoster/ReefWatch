@@ -10,10 +10,11 @@ import json
 import sys
 from datetime import datetime, timedelta
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
 IMAGERY_DIR = os.path.join(BASE_DIR, "imagery_history")
 LOG_FILE = os.path.join(BASE_DIR, "imagery_log.jsonl")
-FEATURES_FILE = os.path.join(BASE_DIR, "scs_features.json")
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "scs_features.json")
 os.makedirs(IMAGERY_DIR, exist_ok=True)
 
 def load_features():

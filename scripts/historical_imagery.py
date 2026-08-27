@@ -24,10 +24,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FEATURES_FILE = os.path.join(SCRIPT_DIR, "scs_features.json")
-IMAGERY_DIR = os.path.join(SCRIPT_DIR, "imagery_history")
-LOG_FILE = os.path.join(SCRIPT_DIR, "historical_imagery_log.jsonl")
-PROGRESS_FILE = os.path.join(SCRIPT_DIR, "historical_progress.json")
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "scs_features.json")
+IMAGERY_DIR = os.path.join(BASE_DIR, "imagery_history")
+LOG_FILE = os.path.join(BASE_DIR, "historical_imagery_log.jsonl")
+PROGRESS_FILE = os.path.join(BASE_DIR, "historical_progress.json")
 os.makedirs(IMAGERY_DIR, exist_ok=True)
 
 # Config

@@ -34,9 +34,10 @@ from datetime import datetime, timezone
 import requests
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FEATURES_FILE = os.path.join(SCRIPT_DIR, "scs_features.json")
-LOG_FILE = os.path.join(SCRIPT_DIR, "improved_ship_log.jsonl")
-URLS_FILE = os.path.join(SCRIPT_DIR, "ship_urls.json")
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "scs_features.json")
+LOG_FILE = os.path.join(BASE_DIR, "ships_log.jsonl")
+URLS_FILE = os.path.join(BASE_DIR, "data", "ship_urls.json")
 
 # SCS bounding box for ship searches
 SCS_LAMIN, SCS_LOMIN, SCS_LAMAX, SCS_LOMAX = 5.0, 105.0, 25.0, 125.0

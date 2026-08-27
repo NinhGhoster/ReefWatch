@@ -28,8 +28,9 @@ from datetime import datetime, timezone
 import requests
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FEATURES_FILE = os.path.join(SCRIPT_DIR, "scs_features.json")
-LOG_FILE = os.path.join(SCRIPT_DIR, "improved_aircraft_log.jsonl")
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "scs_features.json")
+LOG_FILE = os.path.join(BASE_DIR, "aircraft_detections.jsonl")
 
 # Spratly + Paracel Islands — Ninh's target areas
 # Spratly: 7-12°N, 109-116°E | Paracel: 15.7-17°N, 111-113°E

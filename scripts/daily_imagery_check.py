@@ -11,7 +11,8 @@ import json
 import hashlib
 from datetime import datetime, timedelta
 
-BASE_DIR = os.path.dirname(__file__)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
 IMAGERY_DIR = os.path.join(BASE_DIR, "imagery")
 HISTORY_DIR = os.path.join(BASE_DIR, "imagery_history")
 LOG_FILE = os.path.join(BASE_DIR, "imagery_log.jsonl")

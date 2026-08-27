@@ -296,6 +296,14 @@ def sanitize_secret_safe(value: Any, key_hint: str | None = None) -> Any:
 
 
 def export_changes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    # Collect analyst review decisions
+    review_status_overrides: dict[str, str] = {}
+    for raw_note in load_jsonl(ANALYST_NOTES_LOG):
+        change_id = raw_note.get("relatedChangeId") or raw_note.get("related_change_id") or raw_note.get("changeId")
+        status = raw_note.get("reviewStatus") or raw_note.get("action")
+        if change_id and status in ("confirmed", "dismissed", "deferred", "pending"):
+            review_status_overrides[change_id] = status
+
     rows = []
     for raw in load_jsonl(PLANET_CHANGES):
         feature_key = raw.get("feature") or raw.get("feature_key")
@@ -305,9 +313,11 @@ def export_changes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str,
         after_date = raw.get("date2") or raw.get("after_date")
         if not before_date or not after_date:
             continue
+        change_id = f"change:{feature_key}:{before_date}:{after_date}"
+        default_status = "pending" if raw.get("changed") else "dismissed"
         rows.append(
             {
-                "id": f"change:{feature_key}:{before_date}:{after_date}",
+                "id": change_id,
                 "featureId": f"feature:{feature_key}",
                 "source": raw.get("source", "planet"),
                 "beforeSceneId": f"scene:planet:{feature_key}:{before_date}",
@@ -320,7 +330,7 @@ def export_changes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str,
                     "pixelDiffPct": raw.get("pixel_diff_pct"),
                     "brightnessChangePct": raw.get("brightness_change_pct"),
                 },
-                "reviewStatus": "pending" if raw.get("changed") else "dismissed",
+                "reviewStatus": review_status_overrides.get(change_id, default_status),
                 "raw": sanitize_secret_safe(raw),
             }
         )
@@ -334,9 +344,11 @@ def export_changes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str,
         if not before_date or not after_date:
             continue
         source = raw.get("product_type", "nisar_gslc")
+        change_id = f"change:{feature_key}:{before_date}:{after_date}"
+        default_status = "pending" if raw.get("changed") else "dismissed"
         rows.append(
             {
-                "id": f"change:{feature_key}:{before_date}:{after_date}",
+                "id": change_id,
                 "featureId": f"feature:{feature_key}",
                 "source": f"nisar_{source}",
                 "beforeSceneId": f"scene:nisar_{source}:{feature_key}:{before_date}",
@@ -351,7 +363,7 @@ def export_changes(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str,
                     "coherenceMean": (raw.get("coherence_change") or {}).get("coherence_mean"),
                     "coherenceDecorrelatedPct": (raw.get("coherence_change") or {}).get("significant_decorrelated_percent"),
                 },
-                "reviewStatus": "pending" if raw.get("changed") else "dismissed",
+                "reviewStatus": review_status_overrides.get(change_id, default_status),
                 "raw": sanitize_secret_safe(raw),
             }
         )

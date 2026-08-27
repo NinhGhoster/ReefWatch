@@ -7,7 +7,7 @@ Instructions for AI agents working on the Reefwatch South China Sea monitoring p
 ## Project Overview
 
 Reefwatch monitors the Spratly and Paracel Islands (77 features, 5 claimant nations) using free OSINT sources:
-- **Satellite imagery** — NASA Worldview (MODIS, 250m), Sentinel-2 (10m), Planet Labs (3-5m thumbnails)
+- **Satellite imagery** — NASA Worldview (MODIS, 250m), Sentinel-2 (10m), Planet Labs (3-5m thumbnails), NISAR L-band SAR (GCOV/GSLC)
 - **Aircraft tracking** — OpenSky Network (per-feature bounding boxes)
 - **Ship monitoring** — AIS URLs / Global Fishing Watch API (pending permissions)
 
@@ -52,10 +52,19 @@ scripts/validate_mvp_snapshot.py ──→ contract + secret-safety checks
 | `data/scs_features.json` | Broader feature database with lat/lon/country metadata |
 | `data/target_features.json` | Canonical monitored target set (currently 77 features) |
 | `data/monitoring_config.json` | Monitoring zones, bbox, active groups |
+| `data/nisar_config.json` | NISAR product IDs, orbit params, feature settings |
 | `scripts/quick_check.py` | Fast aircraft scan (<30s, combined bbox) |
 | `scripts/opensky_sweep.py` | Periodic sweep — per-feature bbox, 15min interval |
 | `scripts/historical_imagery.py` | Historical satellite imagery backfill with resume |
 | `scripts/improved_aircraft_monitor.py` | Multi-source aircraft with dedup |
+| `scripts/nisar_fetch.py` | Download NISAR GCOV/GSLC via earthaccess |
+| `scripts/nisar_processor.py` | Process GCOV decorrelation + GSLC amplitude/coherence |
+| `scripts/nisar_coherence_chunked.py` | Large-scale GSLC coherence via Dask (chunked) |
+| `scripts/sentinel2_fetch.py` | Fetch Sentinel-2 L2A via CMR |
+| `scripts/s2_correlation.py` | Correlate S2 optical with NISAR changes |
+| `scripts/osint_crossref.py` | Cross-reference changes with OSINT sources |
+| `scripts/review_queue.py` | Analyst review queue CLI (confirm, dismiss, defer, annotate) |
+| `scripts/generate_dashboard.py` | Standalone interactive HTML analyst dashboard |
 | `scripts/export_mvp_snapshot.py` | Normalize raw outputs into `derived/` |
 | `scripts/validate_mvp_snapshot.py` | Validate MVP contract + secret-safe source health |
 
@@ -97,6 +106,8 @@ When adding or changing output-producing scripts, keep the app-facing contract s
 - `derived/review_queue.json`
 - `derived/overview.json`
 - `derived/source_health.json`
+
+**Source health entries** now include: `nisar_gcov`, `nisar_gslc`, `sentinel2`, `planet`, `opensky`, `modis`
 
 If you touch this layer, run:
 
@@ -197,6 +208,228 @@ Once images are downloaded:
 
 
 
+
+---
+## NISAR L-band SAR Monitoring
+
+NISAR (NASA-ISRO Synthetic Aperture Radar) provides all-weather, day/night L-band SAR imagery for SCS feature monitoring.
+
+### Products
+
+| Product | Description | Resolution | Use Case |
+|---------|-------------|------------|----------|
+| **GCOV** | Geocoded Coherence | ~30m | Surface change, decorrelation detection |
+| **GSLC** | Geocoded Single-Look Complex | ~10m | Interferometry, coherence time series |
+
+### Workflows
+
+#### 12-Day Cycle (Automated)
+Runs every 12 days at 06:00 UTC (aligned with NISAR descending pass) via `.github/workflows/nisar-12day-cycle.yml` on **self-hosted Spartan HPC runner**:
+
+```
+fetch-nisar → process-gcov + process-gslc (parallel)
+              ↓
+         correlate-s2 + osint-crossref (parallel)
+              ↓
+         export-mvp → notify
+```
+
+#### Daily Fetch & Process (Automated + Manual)
+Runs daily at 06:30 UTC via `.github/workflows/nisar-daily.yml` on Spartan:
+- Fetches both GCOV + GSLC (14-day lookback default)
+- Processes with dual method (amplitude + coherence)
+- Exports MVP snapshot directly
+
+### Key Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/nisar_fetch.py` | Download GCOV/GSLC via earthaccess with resume, per-feature orbit locking |
+| `scripts/nisar_processor.py` | Process GCOV changes + GSLC amplitude/coherence |
+| `scripts/nisar_coherence_chunked.py` | Large-scale GSLC coherence via Dask (128px tiles, 16px overlap) |
+| `scripts/nisar_orbit_calc.py` | Orbit prediction for feature scheduling |
+
+### Configuration
+- `data/nisar_config.json` — product IDs, orbit params, feature-specific settings
+- Earthdata credentials via GitHub secrets: `EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD`
+- Conda env: `/data/gpfs/projects/punim1990/haninhn/nisar_envs/reefwatch`
+
+### Orbit Locking
+Each feature uses a fixed reference orbit for consistent time-series analysis. The fetch script locks to the first-seen orbit per feature to ensure pixel-aligned stacks.
+
+### Rate Limits & Resume
+- **Earthaccess**: 2s between requests (`RATE_LIMIT = 2.0`)
+- **Resume**: `--resume` flag skips already-downloaded granules (checks local filesystem)
+- **Timeouts**: 180min fetch, 240min GCOV process, 480min GSLC coherence
+
+### Outputs
+- `nisar_fetch_log.jsonl` — per-granule download status
+- `nisar_changes.jsonl` — detected changes (GCOV decorrelation, GSLC coherence drops)
+- `imagery_history/*_nisar_gslc_*.h5`, `*_nisar_gcov_*.h5` — raw HDF5 products
+- `derived/` — normalized via MVP export
+
+---
+
+## Sentinel-2 Optical Correlation
+
+Validates NISAR SAR changes with 10m optical imagery.
+
+### Fetch
+- `scripts/sentinel2_fetch.py` — queries CMR for S2 L2A, 60-day lookback, cloud-filtered
+- Downloads visual bands (RGB) as PNG for quick review
+- Runs on GitHub-hosted `ubuntu-latest` (no HPC needed)
+
+### Correlation
+- `scripts/s2_correlation.py` — spatial+temporal matching against NISAR changes
+- **Window**: ±14 days around NISAR change detection
+- **Output**: `s2_correlation.jsonl` + `derived/s2_correlation_report.json`
+- Classifies: `confirmed_change`, `no_optical_change`, `cloud_obscured`, `no_s2_coverage`
+
+### Change Detection
+- `scripts/sentinel2_change_detection.py` — independent S2 change detection (NDVI, NDBI, RGB diff)
+- Can run standalone for optical-only monitoring
+
+---
+
+## OSINT Cross-Reference Engine
+
+Correlates NISAR/SAR changes with open-source intelligence.
+
+### Sources Queried
+- **AIS/Vessel**: MarineTraffic, VesselFinder, Global Fishing Watch (where available)
+- **Aircraft**: OpenSky, ADSB.fi historical tracks near feature at change time
+- **News/Reports**: AMTI/CSIS updates, Google News, Twitter/X OSINT accounts
+- **Satellite**: Planet thumbnails, Maxar open data (if available)
+
+### Script
+- `scripts/osint_crossref.py` — takes NISAR changes, queries sources, emits confidence scores
+
+### Output
+- `osint_crossref.jsonl` — per-change OSINT evidence
+- `derived/osint_crossref_report.json` — aggregated report with confidence tiers
+
+### Confidence Tiers
+| Tier | Criteria |
+|------|----------|
+| **High** | Multiple independent sources confirm activity |
+| **Medium** | Single source + temporal correlation |
+| **Low** | SAR change only, no OSINT corroboration |
+| **False Positive** | OSINT confirms no activity (cloud artifact, etc.) |
+
+---
+
+## CI/CD Pipeline
+
+### Workflows
+
+| Workflow | Trigger | Runner | Purpose |
+|----------|---------|--------|---------|
+| `nisar-12day-cycle.yml` | Cron `0 6 */12 * *` + `workflow_dispatch` | Spartan (self-hosted) | Full 12-day SAR cycle with S2+OSINT |
+| `nisar-daily.yml` | Cron `30 6 * * *` + `push` + `workflow_dispatch` | Spartan | Daily fetch/process/MVP export |
+
+### Job Dependencies (12-day cycle)
+```
+fetch-nisar
+  ├── process-gcov (needs: fetch-nisar)
+  ├── process-gslc (needs: fetch-nisar)
+  ├── fetch-sentinel2 (independent, GitHub-hosted)
+       ↓
+correlate-s2 (needs: process-gcov, fetch-sentinel2)
+osint-crossref (needs: process-gcov)
+       ↓
+export-mvp (needs: correlate-s2, osint-crossref)
+       ↓
+notify (needs: export-mvp)
+```
+
+### Artifact Passing
+- Jobs upload/download artifacts via `actions/upload-artifact@v4` / `download-artifact@v4`
+- `derived/`, `nisar_changes.jsonl`, `s2_correlation.jsonl`, `osint_crossref.jsonl` passed between jobs
+- Retention: 30 days (imagery), 90 days (MVP snapshot)
+
+### Secret Handling
+- Earthdata creds: GitHub secrets → `~/.netrc` in each Spartan job
+- Planet: `.env` local only, never in CI (Planet jobs run locally or optional)
+- MVP validation checks for secret leakage in `derived/`
+
+---
+
+## Quick Start / Common Commands
+
+### NISAR SAR Processing
+```bash
+# Fetch NISAR GCOV + GSLC (14-day lookback, all features)
+python3 scripts/nisar_fetch.py --all --days 14 --product both --resume
+
+# Process GCOV changes (HH + HV polarizations)
+python3 scripts/nisar_processor.py --all --product gcov --polarization HH,HV --changelog
+
+# Process GSLC coherence (chunked, large scale)
+python3 scripts/nisar_coherence_chunked.py --all --polarization HH --tile-size 128 --overlap 16 --changelog
+```
+
+### Sentinel-2 Optical
+```bash
+# Fetch Sentinel-2 L2A imagery (60-day lookback)
+python3 scripts/sentinel2_fetch.py --all --days 60 --resume
+
+# Correlate with NISAR changes (±14 day window)
+python3 scripts/s2_correlation.py --all --window-days 14 --changelog
+
+# Independent S2 change detection
+python3 scripts/sentinel2_change_detection.py --all --changelog
+```
+
+### OSINT Cross-Reference
+```bash
+# Cross-reference NISAR changes with OSINT sources
+python3 scripts/osint_crossref.py --all
+```
+
+### MVP Export & Validation
+```bash
+# Export normalized MVP snapshot to derived/
+python3 scripts/export_mvp_snapshot.py
+
+# Validate MVP contract + secret safety
+python3 scripts/validate_mvp_snapshot.py
+```
+
+### Analyst Review & Dashboard
+```bash
+# List and inspect pending change detections
+python3 scripts/review_queue.py --list
+python3 scripts/review_queue.py --view <change_id>
+
+# Confirm, dismiss, or defer change detections
+python3 scripts/review_queue.py --confirm <change_id> --note "Confirmed outpost expansion"
+python3 scripts/review_queue.py --dismiss <change_id> --note "Dismissed cloud artifact"
+
+# Interactive terminal review mode
+python3 scripts/review_queue.py --interactive
+
+# Generate standalone HTML analyst dashboard
+python3 scripts/generate_dashboard.py --open
+```
+
+### Legacy Aircraft/Ship/Imagery
+```bash
+# Fast aircraft check (<30s)
+python3 scripts/quick_check.py
+
+# Full multi-source aircraft scan
+python3 scripts/improved_aircraft_monitor.py
+
+# Daily imagery check
+python3 scripts/daily_imagery_check.py
+
+# Ship monitoring (generates AIS URLs)
+python3 scripts/improved_ship_monitor.py
+
+# Historical imagery status
+python3 scripts/historical_imagery.py --status
+```
+
 ---
 
 ## Flight Tracking (from flightclaw skill)
@@ -282,10 +515,18 @@ All detection logs are newline-delimited JSON:
 - `ships_log.jsonl` — ship monitoring (URLs + AIS data)
 - `imagery_changes.jsonl` — satellite imagery change events
 - `historical_imagery_log.jsonl` — backfill progress
+- `nisar_fetch_log.jsonl` — per-granule NISAR download status
+- `nisar_changes.jsonl` — NISAR detected changes (GCOV decorrelation, GSLC coherence drops)
+- `s2_correlation.jsonl` — Sentinel-2 correlation results
+- `osint_crossref.jsonl` — OSINT cross-reference evidence
+- `planet_changes.jsonl` — Planet thumbnail change detections
+- `planet_fetch_log.jsonl` — Planet search/fetch log
 
 ### Imagery
 - `imagery_history/{feature}_{date}.png` — raw satellite image
 - `imagery_history/{feature}_latest.png` — symlink to most recent
+- `imagery_history/{feature}_nisar_gslc_*.h5` — NISAR GSLC HDF5 products
+- `imagery_history/{feature}_nisar_gcov_*.h5` — NISAR GCOV HDF5 products
 
 ---
 

@@ -22,6 +22,8 @@ import xarray as xr
 from scipy.ndimage import uniform_filter
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
 BASE_DIR = os.path.dirname(SCRIPT_DIR)
 IMAGERY_DIR = os.path.join(BASE_DIR, "imagery_history")
 CHANGELOG_FILE = os.path.join(BASE_DIR, "nisar_changes.jsonl")

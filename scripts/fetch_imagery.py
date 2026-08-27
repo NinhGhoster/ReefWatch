@@ -9,7 +9,9 @@ import os
 import json
 from datetime import datetime, timedelta
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "imagery")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+OUTPUT_DIR = os.path.join(BASE_DIR, "imagery_history")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Spratly airport locations (name, lat, lon, bbox_half)

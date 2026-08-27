@@ -21,8 +21,9 @@ from datetime import datetime, timezone
 import requests
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FEATURES_FILE = os.path.join(SCRIPT_DIR, "scs_features.json")
-DETECTIONS_LOG = os.path.join(SCRIPT_DIR, "aircraft_detections.jsonl")
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+FEATURES_FILE = os.path.join(BASE_DIR, "data", "scs_features.json")
+DETECTIONS_LOG = os.path.join(BASE_DIR, "aircraft_detections.jsonl")
 API_URL = "https://opensky-network.org/api/states/all"
 RATE_LIMIT = 0.5  # seconds between API requests
 
