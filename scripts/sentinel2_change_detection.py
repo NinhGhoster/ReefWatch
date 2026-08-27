@@ -26,6 +26,7 @@ if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
 from cloud_filter import assess_cloud_interference, calculate_cloud_cover, detect_cloud_mask
+from diff_visualizer import create_annotated_diff_triptych
 
 IMAGERY_DIR = os.path.join(SCRIPT_DIR, "..", "imagery_history")
 LOG_FILE = os.path.join(SCRIPT_DIR, "..", "sentinel2_changes.jsonl")
@@ -175,13 +176,24 @@ def compare_images(path1, path2, feature_key=None):
     else:
         change_level = "significant"
 
-    # Create visualization
+    # Create high-contrast annotated triptych visualization (Before | After | Heatmap + Legend)
     if feature_key:
         vis_path = os.path.join(OUTPUT_DIR, f"{feature_key}_diff_{date1}_vs_{date2}.png")
     else:
         vis_path = os.path.join(OUTPUT_DIR, f"diff_{date1}_vs_{date2}.png")
 
-    create_diff_visualization(rgb1, rgb2, vis_path)
+    create_annotated_diff_triptych(
+        path1,
+        path2,
+        vis_path,
+        feature_name=feature_key or "Disputed Feature",
+        date1=date1,
+        date2=date2,
+        ssim_score=ssim_score,
+        pixel_diff_pct=pixel_diff,
+        classification=change_level,
+        cloud_status=cloud_eval["status_label"],
+    )
 
     result = {
         "image1": path1,

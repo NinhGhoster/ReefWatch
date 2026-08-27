@@ -484,8 +484,6 @@ def build_dashboard_html() -> str:
     <!-- SCREEN 3: VISUAL IMAGERY & DIFF VIEWER -->
     <section id="screen-gallery" class="screen">
       <h1>Visual Imagery & Difference Heatmaps</h1>
-      <p class="subtitle">Direct photographic evidence and pixel delta heatmaps from 1,090 satellite scenes with cloud filtering</p>
-
       <div class="filter-bar">
         <input type="text" id="gallery-search" class="search-input" placeholder="🔍 Filter images by feature name..." oninput="renderImageGallery()">
         <select id="gallery-type-filter" class="filter-select" onchange="renderImageGallery()">
@@ -499,6 +497,31 @@ def build_dashboard_html() -> str:
           <option value="moderate">⛅ Low-to-Moderate (&lt; 35% Cloud)</option>
           <option value="obscured">☁️ Cloud Obscured (&gt; 35% Cloud)</option>
         </select>
+      </div>
+
+      <!-- HEATMAP INTERPRETATION & COLOR SCALE GUIDE -->
+      <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;">
+        <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+          <span>🎨 How to Read Difference Heatmaps (What the Colors Mean):</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 0.82rem;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display:inline-block; width: 14px; height: 14px; background: #ff1e1e; border-radius: 3px; box-shadow: 0 0 6px rgba(255,30,30,0.6);"></span>
+            <span><strong>Red / Crimson (&Delta; &ge; 90)</strong>: Major New Construction, Runway Paving, Land Reclamation</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display:inline-block; width: 14px; height: 14px; background: #ffd700; border-radius: 3px; box-shadow: 0 0 6px rgba(255,215,0,0.5);"></span>
+            <span><strong>Yellow / Amber (50 &le; &Delta; &lt; 90)</strong>: Moderate Ground Alteration, Harbor/Seawall Shift</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display:inline-block; width: 14px; height: 14px; background: #00beff; border-radius: 3px; box-shadow: 0 0 6px rgba(0,190,255,0.5);"></span>
+            <span><strong>Cyan / Blue (22 &le; &Delta; &lt; 50)</strong>: Minor Surface Shift, Vegetation / Sand Motion</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display:inline-block; width: 14px; height: 14px; background: #1e293b; border: 1px solid #475569; border-radius: 3px;"></span>
+            <span><strong>Dark / Muted (&Delta; &lt; 22)</strong>: Unchanged Baseline (Reef, Deep Water, Stable Ground)</span>
+          </div>
+        </div>
       </div>
 
       <div class="gallery-grid" id="gallery-grid"></div>
