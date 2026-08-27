@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Generate a standalone interactive HTML analyst dashboard from derived/ MVP data.
+"""Generate a standalone interactive HTML analyst dashboard with visual evidence and raw data explorer.
 
-Renders all 5 core MVP screens specified in docs/mvp-data-model-and-screens.md:
-1. Overview / Daily Brief
-2. Feature List & Inventory
-3. Feature Detail Modal / Drawer
-4. Change Review Queue (interactive triage)
-5. Source Health & Ingestion Status
+Renders 6 core screens:
+1. 📊 Overview & Daily Brief (KPIs, active alerts, optical confirmation rate)
+2. 🏝️ Features Registry (77 features, strategic facilities, search/filter)
+3. ⚡ Change Review Queue (interactive triage deck)
+4. 🔬 Evidence & Telemetry Tracker (Raw optical SSIM matrix, SAR metrics, and audit ledger)
+5. 🖼️ Visual Imagery & Diff Viewer (Before vs After optical scenes and diff heatmaps)
+6. 🛰️ Source Health (secret-safe operational status of all sensor feeds)
 
 Outputs to derived/dashboard.html (zero external JS/CSS dependencies).
 
@@ -28,7 +29,12 @@ from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DERIVED_DIR = BASE_DIR / "derived"
+IMAGERY_DIR = BASE_DIR / "imagery_history"
 DASHBOARD_HTML = DERIVED_DIR / "dashboard.html"
+ALERTS_LOG = BASE_DIR / "alerts_log.jsonl"
+NISAR_CHANGES = BASE_DIR / "nisar_changes.jsonl"
+S2_LOG = BASE_DIR / "s2_correlation.jsonl"
+ANALYST_NOTES = BASE_DIR / "analyst_notes.jsonl"
 
 
 def load_json(path: Path) -> Any:
@@ -53,6 +59,93 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def build_image_catalog() -> dict[str, list[dict[str, str]]]:
+    """Catalog all images in imagery_history/ grouped by feature."""
+    catalog: dict[str, list[dict[str, str]]] = {}
+    if not IMAGERY_DIR.exists():
+        return catalog
+
+    for p in IMAGERY_DIR.glob("*.png"):
+        fname = p.name
+        # Match pattern: {feature}_sentinel2_{date}.png or {feature}_diff_{date1}_vs_{date2}.png
+        if "_sentinel2_" in fname:
+            feature_key = fname.split("_sentinel2_")[0]
+            date_str = fname.split("_sentinel2_")[1].replace(".png", "")
+            catalog.setdefault(feature_key, []).append({
+                "type": "sentinel2",
+                "filename": fname,
+                "path": f"../imagery_history/{fname}",
+                "date": date_str,
+                "label": f"Optical {date_str}",
+            })
+        elif "_diff_" in fname:
+            feature_key = fname.split("_diff_")[0]
+            diff_part = fname.split("_diff_")[1].replace(".png", "")
+            catalog.setdefault(feature_key, []).append({
+                "type": "diff",
+                "filename": fname,
+                "path": f"../imagery_history/{fname}",
+                "date": diff_part,
+                "label": f"Diff Heatmap ({diff_part})",
+            })
+
+    # Sort each feature's images chronologically
+    for fkey in catalog:
+        catalog[fkey].sort(key=lambda x: x["date"], reverse=True)
+    return catalog
+
+
+def parse_optical_alerts(alerts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Extract structured data rows from alerts_log.jsonl to prove optical calculations."""
+    parsed = []
+    seen = set()
+    for raw in alerts:
+        text = raw.get("text", "")
+        feature = raw.get("feature", "").replace("_sentinel2", "")
+        # Parse SSIM, Pixel Δ, Dates from alert text
+        dates = "Unknown"
+        ssim = None
+        pixel_diff = None
+        cls_type = "Structural Change"
+
+        lines = text.split("\n")
+        for line in lines:
+            line_str = line.strip()
+            if "📅" in line_str:
+                dates = line_str.replace("📅", "").strip()
+            elif "SSIM:" in line_str:
+                parts = line_str.split("|")
+                for p in parts:
+                    if "SSIM:" in p:
+                        try:
+                            ssim = float(p.split("SSIM:")[1].strip())
+                        except ValueError:
+                            pass
+                    if "Pixel Δ:" in p:
+                        try:
+                            pixel_diff = float(p.split("Pixel Δ:")[1].replace("%", "").strip())
+                        except ValueError:
+                            pass
+            elif "New Construction" in line_str:
+                cls_type = "New Construction"
+            elif "Major Structural Change" in line_str:
+                cls_type = "Major Structural Change"
+
+        dedup_key = (feature, dates, ssim)
+        if dedup_key not in seen:
+            seen.add(dedup_key)
+            parsed.append({
+                "feature": feature,
+                "timestamp": raw.get("timestamp"),
+                "dates": dates,
+                "ssim": ssim,
+                "pixelDiffPct": pixel_diff,
+                "classification": cls_type,
+                "severity": raw.get("severity", "🔴"),
+            })
+    return parsed
+
+
 def build_dashboard_html() -> str:
     # Load all derived datasets
     overview = load_json(DERIVED_DIR / "overview.json")
@@ -68,6 +161,13 @@ def build_dashboard_html() -> str:
     traffic = load_jsonl(DERIVED_DIR / "traffic.jsonl")
     notes = load_jsonl(DERIVED_DIR / "notes.jsonl")
 
+    # Load raw telemetry / proof datasets
+    raw_alerts = load_jsonl(ALERTS_LOG)
+    optical_tracking = parse_optical_alerts(raw_alerts)
+    raw_nisar = load_jsonl(NISAR_CHANGES)
+    raw_notes = load_jsonl(ANALYST_NOTES)
+    image_catalog = build_image_catalog()
+
     # Embed data as JSON payload
     data_payload = {
         "overview": overview,
@@ -81,6 +181,11 @@ def build_dashboard_html() -> str:
         "changes": changes,
         "traffic": traffic,
         "notes": notes,
+        "rawNotes": raw_notes,
+        "opticalTracking": optical_tracking,
+        "rawNisar": raw_nisar,
+        "imageCatalog": image_catalog,
+        "totalImages": sum(len(v) for v in image_catalog.values()),
         "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
     }
 
@@ -89,7 +194,7 @@ def build_dashboard_html() -> str:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReefWatch — SCS Maritime & Outpost Intelligence</title>
+  <title>ReefWatch — South China Sea Monitoring & Evidence Intelligence</title>
   <style>
     :root {{
       --bg: #0b0f19;
@@ -99,14 +204,10 @@ def build_dashboard_html() -> str:
       --text: #f3f4f6;
       --text-muted: #9ca3af;
       --primary: #3b82f6;
-      --primary-hover: #2563eb;
       --accent: #06b6d4;
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
-      --p1: #ef4444;
-      --p2: #f59e0b;
-      --p3: #6b7280;
     }}
     * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }}
     body {{ background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }}
@@ -115,11 +216,11 @@ def build_dashboard_html() -> str:
     header {{ background: #0f172a; border-bottom: 1px solid #1e293b; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }}
     .logo {{ display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.2rem; color: #fff; }}
     .logo-badge {{ background: linear-gradient(135deg, #2563eb, #06b6d4); color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px; }}
-    nav {{ display: flex; gap: 6px; }}
-    .nav-btn {{ background: transparent; border: 1px solid transparent; color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 8px; }}
+    nav {{ display: flex; gap: 6px; flex-wrap: wrap; }}
+    .nav-btn {{ background: transparent; border: 1px solid transparent; color: var(--text-muted); padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 6px; }}
     .nav-btn:hover {{ background: #1e293b; color: #fff; }}
     .nav-btn.active {{ background: #1e293b; color: #60a5fa; border-color: #3b82f6; font-weight: 600; }}
-    .badge {{ background: var(--danger); color: white; border-radius: 9999px; padding: 1px 7px; font-size: 0.75rem; font-weight: 700; }}
+    .badge {{ background: var(--primary); color: white; border-radius: 9999px; padding: 1px 7px; font-size: 0.75rem; font-weight: 700; }}
     
     main {{ flex: 1; padding: 24px; max-width: 1440px; margin: 0 auto; width: 100%; }}
     .screen {{ display: none; }}
@@ -133,7 +234,8 @@ def build_dashboard_html() -> str:
     
     /* Stats Row */
     .stats-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }}
-    .stat-card {{ background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: 10px; }}
+    .stat-card {{ background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: 10px; cursor: pointer; transition: all 0.15s; }}
+    .stat-card:hover {{ border-color: var(--primary); transform: translateY(-2px); }}
     .stat-card .label {{ color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }}
     .stat-card .value {{ font-size: 1.8rem; font-weight: 700; margin: 4px 0; color: #fff; }}
     .stat-card .subtext {{ font-size: 0.8rem; color: var(--text-muted); }}
@@ -151,14 +253,14 @@ def build_dashboard_html() -> str:
     .filter-chip {{ background: #1e293b; border: 1px solid #334155; color: var(--text-muted); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; transition: all 0.15s; }}
     .filter-chip.active {{ background: #2563eb; color: #fff; border-color: #3b82f6; }}
     
-    /* Table */
-    .table-container {{ overflow-x: auto; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; }}
-    table {{ width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }}
+    /* Tables */
+    .table-container {{ overflow-x: auto; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; margin-bottom: 20px; }}
+    table {{ width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }}
     th {{ background: #172033; padding: 12px 16px; font-weight: 600; color: #cbd5e1; border-bottom: 1px solid var(--card-border); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }}
-    td {{ padding: 12px 16px; border-bottom: 1px solid #1e293b; color: #e2e8f0; }}
-    tr:hover td {{ background: var(--card-hover); cursor: pointer; }}
+    td {{ padding: 12px 16px; border-bottom: 1px solid #1e293b; color: #e2e8f0; vertical-align: middle; }}
+    tr:hover td {{ background: var(--card-hover); }}
     
-    /* Tags & Badges */
+    /* Badges & Tags */
     .priority-badge {{ padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; display: inline-block; }}
     .priority-1 {{ background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }}
     .priority-2 {{ background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }}
@@ -170,44 +272,35 @@ def build_dashboard_html() -> str:
     .tag-radar {{ background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border-color: rgba(168, 85, 247, 0.4); }}
     .tag-port {{ background: rgba(6, 182, 212, 0.2); color: #67e8f9; border-color: rgba(6, 182, 212, 0.4); }}
     
-    .status-pill {{ display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 500; padding: 3px 8px; border-radius: 6px; }}
-    .status-pending {{ background: rgba(245, 158, 11, 0.2); color: #fbbf24; }}
-    .status-confirmed {{ background: rgba(16, 185, 129, 0.2); color: #34d399; }}
-    .status-dismissed {{ background: rgba(107, 114, 128, 0.2); color: #9ca3af; }}
-    .status-ready {{ background: rgba(16, 185, 129, 0.2); color: #34d399; }}
-    .status-stale {{ background: rgba(245, 158, 11, 0.2); color: #fbbf24; }}
+    .status-pill {{ display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; padding: 3px 8px; border-radius: 6px; }}
+    .status-confirmed {{ background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }}
+    .status-deferred {{ background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }}
+    .status-dismissed {{ background: rgba(107, 114, 128, 0.2); color: #9ca3af; border: 1px solid rgba(107, 114, 128, 0.4); }}
+    .status-pending {{ background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }}
     
-    /* Triage Cards */
-    .triage-deck {{ display: flex; flex-direction: column; gap: 16px; }}
-    .triage-card {{ background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 20px; transition: border 0.15s; }}
-    .triage-card:hover {{ border-color: #3b82f6; }}
-    .triage-header {{ display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }}
-    .triage-metrics {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 14px 0; background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; }}
-    .metric-item .m-label {{ font-size: 0.75rem; color: var(--text-muted); }}
-    .metric-item .m-val {{ font-size: 1rem; font-weight: 700; color: #fff; margin-top: 2px; }}
-    .triage-actions {{ display: flex; gap: 10px; margin-top: 14px; }}
-    .btn {{ padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }}
-    .btn-confirm {{ background: #059669; color: white; }}
-    .btn-confirm:hover {{ background: #047857; }}
-    .btn-dismiss {{ background: #4b5563; color: white; }}
-    .btn-dismiss:hover {{ background: #374151; }}
-    .btn-defer {{ background: #d97706; color: white; }}
-    .btn-defer:hover {{ background: #b45309; }}
-    .btn-outline {{ background: transparent; border: 1px solid #334155; color: #cbd5e1; }}
-    .btn-outline:hover {{ background: #1e293b; color: #fff; }}
+    /* Sub Tabs inside Evidence View */
+    .sub-tabs {{ display: flex; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }}
+    .sub-tab-btn {{ background: #1e293b; border: 1px solid #334155; color: #cbd5e1; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }}
+    .sub-tab-btn.active {{ background: #2563eb; color: #fff; border-color: #3b82f6; }}
+    
+    /* Visual Comparison Cards */
+    .gallery-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }}
+    .image-card {{ background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; transition: all 0.15s; }}
+    .image-card:hover {{ border-color: #3b82f6; }}
+    .image-preview {{ width: 100%; height: 200px; object-fit: cover; background: #111827; cursor: pointer; display: block; }}
+    .image-caption {{ padding: 12px; font-size: 0.85rem; }}
+    
+    /* Metric pill */
+    .metric-chip {{ background: #1e293b; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; color: #60a5fa; }}
     
     /* Modal */
-    .modal-overlay {{ display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 20px; }}
+    .modal-overlay {{ display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 20px; }}
     .modal-overlay.open {{ display: flex; }}
-    .modal-content {{ background: var(--card-bg); border: 1px solid #334155; border-radius: 12px; width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; padding: 24px; position: relative; }}
+    .modal-content {{ background: var(--card-bg); border: 1px solid #334155; border-radius: 12px; width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; padding: 24px; position: relative; }}
     .modal-close {{ position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; }}
     
-    /* Health Grid */
-    .health-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }}
-    .health-card {{ background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 18px; }}
-    .health-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }}
-    .health-row {{ display: flex; justify-content: space-between; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid #1e293b; }}
-    .health-row:last-child {{ border-bottom: none; }}
+    /* Lightbox for full images */
+    .lightbox-img {{ max-width: 100%; max-height: 70vh; object-fit: contain; margin: 0 auto; display: block; border-radius: 8px; }}
   </style>
 </head>
 <body>
@@ -215,12 +308,14 @@ def build_dashboard_html() -> str:
   <header>
     <div class="logo">
       <span>ReefWatch</span>
-      <span class="logo-badge">OSINT SCS MONITOR</span>
+      <span class="logo-badge">OSINT SCS INTELLIGENCE</span>
     </div>
     <nav>
       <button class="nav-btn active" onclick="switchScreen('overview')">📊 Overview</button>
-      <button class="nav-btn" onclick="switchScreen('features')">🏝️ Features</button>
-      <button class="nav-btn" onclick="switchScreen('queue')">⚡ Review Queue <span class="badge" id="nav-queue-badge">16</span></button>
+      <button class="nav-btn" onclick="switchScreen('evidence')">🔬 Evidence & Proof Data <span class="badge" id="nav-evidence-badge">39</span></button>
+      <button class="nav-btn" onclick="switchScreen('gallery')">🖼️ Imagery & Diff Maps <span class="badge" style="background:#059669;" id="nav-images-badge">1090</span></button>
+      <button class="nav-btn" onclick="switchScreen('features')">🏝️ Features (77)</button>
+      <button class="nav-btn" onclick="switchScreen('queue')">⚡ Triage Log</button>
       <button class="nav-btn" onclick="switchScreen('health')">🛰️ Source Health</button>
     </nav>
   </header>
@@ -228,63 +323,172 @@ def build_dashboard_html() -> str:
   <main>
     <!-- SCREEN 1: OVERVIEW -->
     <section id="screen-overview" class="screen active">
-      <h1>Overview & Daily Brief</h1>
-      <p class="subtitle" id="overview-timestamp">Latest snapshot intelligence</p>
+      <h1>Intelligence Overview & Daily Brief</h1>
+      <p class="subtitle" id="overview-timestamp">Operational situational brief</p>
 
       <div class="stats-grid">
-        <div class="stat-card">
+        <div class="stat-card" onclick="switchScreen('features')">
           <div class="label">Monitored Features</div>
           <div class="value" id="stat-features">77</div>
-          <div class="subtext">5 Claimant Nations</div>
+          <div class="subtext">5 Claimant Nations →</div>
         </div>
-        <div class="stat-card">
-          <div class="label">Priority 1 Outposts</div>
-          <div class="value" id="stat-p1" style="color: var(--danger)">5</div>
-          <div class="subtext">Major Airstrips & Garrisons</div>
+        <div class="stat-card" onclick="switchScreen('evidence')">
+          <div class="label">Optical Change Detections</div>
+          <div class="value" id="stat-optical" style="color: var(--danger);">39</div>
+          <div class="subtext">SSIM & Pixel Δ Proof Data →</div>
         </div>
-        <div class="stat-card">
-          <div class="label">Imagery Scenes</div>
-          <div class="value" id="stat-scenes">608</div>
-          <div class="subtext">NISAR, S2, Planet, MODIS</div>
+        <div class="stat-card" onclick="switchScreen('gallery')">
+          <div class="label">Satellite Images & Diffs</div>
+          <div class="value" id="stat-images" style="color: #60a5fa;">1,090</div>
+          <div class="subtext">Optical passes & difference masks →</div>
         </div>
-        <div class="stat-card">
-          <div class="label">Pending Reviews</div>
-          <div class="value" id="stat-pending" style="color: var(--warning)">16</div>
-          <div class="subtext">Awaiting Analyst Triage</div>
+        <div class="stat-card" onclick="switchScreen('evidence', 'tab-notes')">
+          <div class="label">Analyst Audit Records</div>
+          <div class="value" id="stat-notes" style="color: var(--success);">10</div>
+          <div class="subtext">6 Confirmed, 4 Deferred →</div>
         </div>
       </div>
 
       <div class="grid-2">
         <div class="card">
-          <h3>⚡ Urgent Review Queue (Top Candidates)</h3>
-          <div id="overview-triage-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
-          <button class="btn btn-outline" style="width: 100%; margin-top: 14px;" onclick="switchScreen('queue')">Go to Full Review Queue →</button>
+          <h3>🎯 High-Confidence Activity (Multi-Sensor Confirmed)</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">SAR Backscatter Surge verified with Sentinel-2 10m Optical Passes</p>
+          <div id="overview-confirmed-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
         </div>
 
         <div class="card">
-          <h3>🛰️ Sensor Coverage & Optical Correlation</h3>
-          <div id="overview-sensor-summary">
-            <div style="background: #0f172a; padding: 14px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 12px;">
-              <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 6px;">
-                <span>Sentinel-2 Optical Confirmation</span>
-                <span style="color: var(--success);" id="s2-confirm-rate">81.8%</span>
-              </div>
-              <div style="font-size: 0.85rem; color: var(--text-muted);">9 of 11 NISAR changes visually corroborated with 10m optical passes.</div>
+          <h3>🛰️ Verification Ratios & Sensor Breakdown</h3>
+          <div style="background: #0f172a; padding: 14px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 6px;">
+              <span>Sentinel-2 Optical Confirmation Rate</span>
+              <span style="color: var(--success);" id="s2-confirm-rate">81.8%</span>
             </div>
-
-            <div style="background: #0f172a; padding: 14px; border-radius: 8px; border: 1px solid #1e293b;">
-              <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 6px;">
-                <span>OSINT Multi-Source Corroboration</span>
-                <span style="color: #60a5fa;" id="osint-confirm-rate">6 Changes</span>
-              </div>
-              <div style="font-size: 0.85rem; color: var(--text-muted);">AMTI/CSIS, Naval News, and OSINT tracks cross-referenced.</div>
-            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">9 of 11 NISAR SAR detections independently corroborated with 10m optical imagery.</div>
           </div>
+
+          <div style="background: #0f172a; padding: 14px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 6px;">
+              <span>Optical SSIM Change Score Range</span>
+              <span style="color: #fbbf24;">0.0223 – 0.4616</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Significant structural change threshold is SSIM &lt; 0.80.</div>
+          </div>
+
+          <button class="btn btn-outline" style="width: 100%;" onclick="switchScreen('evidence')">🔬 Inspect Raw Detection Telemetry & Evidence →</button>
         </div>
       </div>
     </section>
 
-    <!-- SCREEN 2: FEATURE LIST -->
+    <!-- SCREEN 2: EVIDENCE & RAW PROOF DATA -->
+    <section id="screen-evidence" class="screen">
+      <h1>Evidence & Detection Telemetry Tracker</h1>
+      <p class="subtitle">Complete proof datasets: Optical SSIM matrix, SAR radar backscatter changes, and analyst decisions</p>
+
+      <div class="sub-tabs">
+        <button id="btn-tab-optical" class="sub-tab-btn active" onclick="switchEvidenceTab('tab-optical')">📸 Optical Detection Matrix (39)</button>
+        <button id="btn-tab-sar" class="sub-tab-btn" onclick="switchEvidenceTab('tab-sar')">📡 Radar SAR Metrics (NISAR)</button>
+        <button id="btn-tab-validation" class="sub-tab-btn" onclick="switchEvidenceTab('tab-validation')">🛰️ Multi-Sensor Correlation (81.8%)</button>
+        <button id="btn-tab-notes" class="sub-tab-btn" onclick="switchEvidenceTab('tab-notes')">📝 Analyst Audit Trail (10)</button>
+      </div>
+
+      <!-- TAB 1: OPTICAL SSIM -->
+      <div id="tab-optical" class="evidence-tab-pane">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Severity</th>
+                <th>Feature</th>
+                <th>Comparison Dates</th>
+                <th>SSIM Score</th>
+                <th>Pixel Δ (%)</th>
+                <th>Classification</th>
+                <th>Visual Evidence</th>
+              </tr>
+            </thead>
+            <tbody id="optical-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: SAR METRICS -->
+      <div id="tab-sar" class="evidence-tab-pane" style="display: none;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Pass Dates</th>
+                <th>Product</th>
+                <th>Pol</th>
+                <th>Backscatter Inc. (dB)</th>
+                <th>Backscatter Dec. (dB)</th>
+                <th>Amplitude Δ (%)</th>
+                <th>Coherence Decorr (%)</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody id="sar-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 3: VALIDATION MATRIX -->
+      <div id="tab-validation" class="evidence-tab-pane" style="display: none;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>SAR Detection Date</th>
+                <th>Optical Pass Date</th>
+                <th>Optical SSIM</th>
+                <th>Mean Pixel Δ</th>
+                <th>Correlation Status</th>
+              </tr>
+            </thead>
+            <tbody id="validation-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 4: AUDIT NOTES -->
+      <div id="tab-notes" class="evidence-tab-pane" style="display: none;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Feature</th>
+                <th>Change ID</th>
+                <th>Decision</th>
+                <th>Analyst Note & Rationale</th>
+              </tr>
+            </thead>
+            <tbody id="notes-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: VISUAL IMAGERY & DIFF VIEWER -->
+    <section id="screen-gallery" class="screen">
+      <h1>Visual Imagery & Difference Heatmaps</h1>
+      <p class="subtitle">Direct photographic evidence and pixel delta heatmaps from 1,090 satellite scenes</p>
+
+      <div class="filter-bar">
+        <input type="text" id="gallery-search" class="search-input" placeholder="🔍 Filter images by feature name..." oninput="renderImageGallery()">
+        <select id="gallery-type-filter" class="filter-select" onchange="renderImageGallery()">
+          <option value="all">All Image Types (Diff Maps + Optical)</option>
+          <option value="diff">Difference Heatmaps Only</option>
+          <option value="sentinel2">Sentinel-2 Optical Passes Only</option>
+        </select>
+      </div>
+
+      <div class="gallery-grid" id="gallery-grid"></div>
+    </section>
+
+    <!-- SCREEN 4: FEATURE REGISTRY -->
     <section id="screen-features" class="screen">
       <h1>Monitored South China Sea Features</h1>
       <p class="subtitle">Canonical registry of 77 reefs, islands, cays, and platforms</p>
@@ -310,7 +514,6 @@ def build_dashboard_html() -> str:
           <option value="2">Priority 2 (Helipads/Harbors)</option>
           <option value="3">Priority 3 (Reefs/DK1)</option>
         </select>
-        <button id="chip-pending" class="filter-chip" onclick="togglePendingFilter()">⚠️ Has Pending Review</button>
       </div>
 
       <div class="table-container">
@@ -323,7 +526,7 @@ def build_dashboard_html() -> str:
               <th>Claimant</th>
               <th>Strategic Facilities</th>
               <th>Latest Imagery</th>
-              <th>Change Status</th>
+              <th>Review Status</th>
               <th>Scenes</th>
             </tr>
           </thead>
@@ -332,24 +535,24 @@ def build_dashboard_html() -> str:
       </div>
     </section>
 
-    <!-- SCREEN 3: REVIEW QUEUE -->
+    <!-- SCREEN 5: REVIEW / TRIAGE LOG -->
     <section id="screen-queue" class="screen">
-      <h1>Analyst Change Review Queue</h1>
-      <p class="subtitle">Triage candidate change detections derived from NISAR SAR and Sentinel-2 optical imagery</p>
+      <h1>Analyst Triage & Decision Ledger</h1>
+      <p class="subtitle">Chronological record of triaged change detections and analyst evaluations</p>
 
       <div class="triage-deck" id="triage-deck"></div>
     </section>
 
-    <!-- SCREEN 4: SOURCE HEALTH -->
+    <!-- SCREEN 6: SOURCE HEALTH -->
     <section id="screen-health" class="screen">
-      <h1>Source Health & Sensor Ingestion</h1>
+      <h1>Source Health & Ingestion Matrix</h1>
       <p class="subtitle">Secret-safe operational status of satellite and traffic telemetry pipelines</p>
 
-      <div class="health-grid" id="health-grid"></div>
+      <div class="stats-grid" id="health-grid"></div>
     </section>
   </main>
 
-  <!-- MODAL: FEATURE DETAIL -->
+  <!-- MODAL: FEATURE DETAIL & LIGHTBOX -->
   <div id="feature-modal" class="modal-overlay" onclick="closeModalOnBg(event)">
     <div class="modal-content">
       <button class="modal-close" onclick="closeModal()">&times;</button>
@@ -360,9 +563,7 @@ def build_dashboard_html() -> str:
   <script>
     const DATA = {json.dumps(data_payload, ensure_ascii=False)};
 
-    let pendingOnlyFilter = false;
-
-    function switchScreen(screenId) {{
+    function switchScreen(screenId, subTabId) {{
       document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
       
@@ -371,54 +572,187 @@ def build_dashboard_html() -> str:
       
       const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick')?.includes(screenId));
       if (btn) btn.classList.add('active');
+
+      if (subTabId) {{
+        switchEvidenceTab(subTabId);
+      }}
+    }}
+
+    function switchEvidenceTab(tabId) {{
+      document.querySelectorAll('.evidence-tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
+      
+      const pane = document.getElementById(tabId);
+      if (pane) pane.style.display = 'block';
+
+      const btn = document.getElementById('btn-' + tabId);
+      if (btn) btn.classList.add('active');
     }}
 
     function initDashboard() {{
-      // Set overview counts
+      // Update header badges and counters
       document.getElementById('overview-timestamp').textContent = 'Snapshot generated: ' + DATA.generatedAt;
       document.getElementById('stat-features').textContent = DATA.features.length;
-      document.getElementById('stat-p1').textContent = DATA.features.filter(f => f.priority === 1).length;
-      document.getElementById('stat-scenes').textContent = DATA.scenes.length;
-      document.getElementById('stat-pending').textContent = DATA.reviewQueue.length;
-      document.getElementById('nav-queue-badge').textContent = DATA.reviewQueue.length;
+      document.getElementById('stat-optical').textContent = DATA.opticalTracking.length;
+      document.getElementById('stat-images').textContent = DATA.totalImages.toLocaleString();
+      document.getElementById('stat-notes').textContent = DATA.notes.length;
+      document.getElementById('nav-evidence-badge').textContent = DATA.opticalTracking.length;
+      document.getElementById('nav-images-badge').textContent = DATA.totalImages.toLocaleString();
 
-      // Render mini queue on overview
-      renderOverviewQueue();
-      // Render feature table
+      renderOverviewConfirmed();
+      renderOpticalTable();
+      renderSarTable();
+      renderValidationTable();
+      renderNotesTable();
+      renderImageGallery();
       renderFeaturesTable();
-      // Render full triage deck
       renderReviewQueue();
-      // Render health grid
       renderHealthGrid();
     }}
 
-    function renderOverviewQueue() {{
-      const container = document.getElementById('overview-triage-list');
+    function renderOverviewConfirmed() {{
+      const container = document.getElementById('overview-confirmed-list');
       container.innerHTML = '';
-      const topItems = DATA.reviewQueue.slice(0, 4);
-      if (topItems.length === 0) {{
-        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">No pending change items.</div>';
+
+      const confirmedChanges = DATA.changes.filter(c => c.reviewStatus === 'confirmed');
+      if (confirmedChanges.length === 0) {{
+        container.innerHTML = '<div style="color: var(--text-muted);">No confirmed changes recorded yet.</div>';
         return;
       }}
 
-      topItems.forEach(item => {{
+      confirmedChanges.forEach(c => {{
         const div = document.createElement('div');
         div.style.cssText = 'background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center;';
+        const f = DATA.features.find(item => item.id === c.featureId) || {{ name: c.featureId }};
         div.innerHTML = `
           <div>
-            <div style="font-weight: 600; font-size: 0.95rem;">${{item.featureName}} <span class="priority-badge priority-${{item.priority}}">P${{item.priority}}</span></div>
-            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">${{item.classification}} • Confidence: ${{Math.round((item.confidence || 0.85) * 100)}}%</div>
+            <div style="font-weight: 700; font-size: 0.95rem;">${{f.name}} <span class="status-pill status-confirmed">✓ CONFIRMED</span></div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+              ${{c.classification}} • Confidence: <strong>${{Math.round((c.confidence || 0.85) * 100)}}%</strong>
+              ${{c.metrics?.amplitudeChangePct ? `• Backscatter Δ: <strong>+${{c.metrics.amplitudeChangePct}}%</strong>` : ''}}
+            </div>
           </div>
-          <button class="btn btn-outline" style="font-size: 0.75rem; padding: 4px 10px;" onclick="viewFeature('${{item.featureKey}}')">Inspect</button>
+          <button class="btn btn-outline" style="font-size: 0.75rem; padding: 4px 10px;" onclick="viewFeature('${{f.key}}')">View Proof</button>
         `;
         container.appendChild(div);
       }});
     }}
 
-    function togglePendingFilter() {{
-      pendingOnlyFilter = !pendingOnlyFilter;
-      document.getElementById('chip-pending').classList.toggle('active', pendingOnlyFilter);
-      renderFeaturesTable();
+    function renderOpticalTable() {{
+      const tbody = document.getElementById('optical-table-body');
+      tbody.innerHTML = '';
+
+      DATA.opticalTracking.forEach(row => {{
+        const tr = document.createElement('tr');
+        const ssimClass = (row.ssim !== null && row.ssim < 0.2) ? 'color: #f87171; font-weight:700;' : 'color: #fbbf24; font-weight:700;';
+        
+        tr.innerHTML = `
+          <td style="font-size: 1.1rem;">${{row.severity}}</td>
+          <td style="font-weight: 600; text-transform: capitalize;">${{row.feature.replace(/_/g, ' ')}}</td>
+          <td>${{row.dates}}</td>
+          <td style="${{ssimClass}}">${{row.ssim !== null ? row.ssim.toFixed(4) : 'N/A'}}</td>
+          <td style="font-weight: 600;">${{row.pixelDiffPct !== null ? row.pixelDiffPct.toFixed(2) + '%' : 'N/A'}}</td>
+          <td><span class="tag" style="color: #cbd5e1;">${{row.classification}}</span></td>
+          <td><button class="btn btn-outline" style="font-size: 0.75rem; padding: 3px 8px;" onclick="openFeatureImages('${{row.feature}}')">Inspect Diffs →</button></td>
+        `;
+        tbody.appendChild(tr);
+      }});
+    }}
+
+    function renderSarTable() {{
+      const tbody = document.getElementById('sar-table-body');
+      tbody.innerHTML = '';
+
+      DATA.rawNisar.forEach(row => {{
+        const tr = document.createElement('tr');
+        const amp = row.amplitude_change || {{}};
+        const coh = row.coherence_change || {{}};
+
+        tr.innerHTML = `
+          <td style="font-weight: 600;">${{row.feature_name || row.feature}}</td>
+          <td>${{row.date_previous}} → ${{row.date_current}}</td>
+          <td><span class="tag">${{row.product_type || 'GSLC'}}</span></td>
+          <td><strong>${{row.polarization || 'HH'}}</strong></td>
+          <td style="color: #34d399; font-weight: 700;">${{amp.mean_increase_db ? '+' + amp.mean_increase_db.toFixed(2) + ' dB' : '—'}}</td>
+          <td style="color: #f87171;">${{amp.mean_decrease_db ? amp.mean_decrease_db.toFixed(2) + ' dB' : '—'}}</td>
+          <td><strong>${{amp.change_percent ? amp.change_percent.toFixed(1) + '%' : '—'}}</strong></td>
+          <td style="color: #60a5fa; font-weight: 700;">${{coh.significant_decorrelated_percent ? coh.significant_decorrelated_percent.toFixed(1) + '%' : '—'}}</td>
+          <td>${{Math.round((row.confidence || 0.85) * 100)}}%</td>
+        `;
+        tbody.appendChild(tr);
+      }});
+    }}
+
+    function renderValidationTable() {{
+      const tbody = document.getElementById('validation-table-body');
+      tbody.innerHTML = '';
+
+      const details = DATA.s2Report?.details || [];
+      details.forEach(item => {{
+        const tr = document.createElement('tr');
+        const nisar = item.nisar_change || {{}};
+        const s2 = item.s2_correlation?.s2_comparison || {{}};
+        const isCorrelated = item.correlated;
+
+        tr.innerHTML = `
+          <td style="font-weight: 600; text-transform: capitalize;">${{item.feature.replace(/_/g, ' ')}}</td>
+          <td>${{nisar.date_previous || '—'}} → ${{nisar.date_current || '—'}}</td>
+          <td>${{item.s2_correlation?.s2_previous_date || '—'}} → ${{item.s2_correlation?.s2_current_date || '—'}}</td>
+          <td style="font-weight: 700; color: #fbbf24;">${{s2.ssim_score !== undefined ? s2.ssim_score.toFixed(4) : '—'}}</td>
+          <td>${{s2.mean_pixel_diff !== undefined ? s2.mean_pixel_diff.toFixed(2) : '—'}}</td>
+          <td>${{isCorrelated ? '<span class="status-pill status-confirmed">✓ Confirmed Optical</span>' : '<span class="status-pill status-dismissed">No Optical Δ</span>'}}</td>
+        `;
+        tbody.appendChild(tr);
+      }});
+    }}
+
+    function renderNotesTable() {{
+      const tbody = document.getElementById('notes-table-body');
+      tbody.innerHTML = '';
+
+      DATA.rawNotes.forEach(n => {{
+        const tr = document.createElement('tr');
+        const decisionClass = n.kind === 'confirmed' ? 'status-confirmed' : (n.kind === 'deferred' ? 'status-deferred' : 'status-dismissed');
+
+        tr.innerHTML = `
+          <td>${{n.createdAt.replace('T', ' ').replace('Z', '')}}</td>
+          <td style="font-weight: 600; text-transform: capitalize;">${{(n.feature || '').replace(/_/g, ' ')}}</td>
+          <td style="font-family: monospace; font-size: 0.75rem; color: #94a3b8;">${{n.relatedChangeId || '—'}}</td>
+          <td><span class="status-pill ${{decisionClass}}">${{n.kind.toUpperCase()}}</span></td>
+          <td>${{n.text}}</td>
+        `;
+        tbody.appendChild(tr);
+      }});
+    }}
+
+    function renderImageGallery() {{
+      const grid = document.getElementById('gallery-grid');
+      grid.innerHTML = '';
+
+      const query = (document.getElementById('gallery-search').value || '').toLowerCase();
+      const typeFilter = document.getElementById('gallery-type-filter').value;
+
+      let rendered = 0;
+      for (const [featureKey, images] of Object.entries(DATA.imageCatalog)) {{
+        if (query && !featureKey.toLowerCase().includes(query)) continue;
+
+        images.forEach(img => {{
+          if (typeFilter !== 'all' && img.type !== typeFilter) return;
+          if (rendered >= 48) return; // limit to 48 images for high performance
+
+          const card = document.createElement('div');
+          card.className = 'image-card';
+          card.innerHTML = `
+            <img src="${{img.path}}" alt="${{img.label}}" class="image-preview" onclick="openLightbox('${{img.path}}', '${{featureKey}} - ${{img.label}}')">
+            <div class="image-caption">
+              <div style="font-weight: 700; text-transform: capitalize;">${{featureKey.replace(/_/g, ' ')}}</div>
+              <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">${{img.label}}</div>
+            </div>
+          `;
+          grid.appendChild(card);
+          rendered++;
+        }});
+      }}
     }}
 
     function renderFeaturesTable() {{
@@ -434,12 +768,10 @@ def build_dashboard_html() -> str:
       DATA.featureStatus.forEach(fs => {{ statusMap[fs.featureKey] = fs; }});
 
       const filtered = DATA.features.filter(f => {{
-        const status = statusMap[f.key] || {{}};
         if (query && !f.name.toLowerCase().includes(query) && !f.key.toLowerCase().includes(query) && !f.country.toLowerCase().includes(query)) return false;
         if (groupVal !== 'all' && f.group !== groupVal) return false;
         if (claimantVal !== 'all' && f.country !== claimantVal && f.claimant !== claimantVal) return false;
         if (priorityVal !== 'all' && f.priority != priorityVal) return false;
-        if (pendingOnlyFilter && !status.flags?.hasPendingReview) return false;
         return true;
       }});
 
@@ -456,8 +788,8 @@ def build_dashboard_html() -> str:
         if (f.tags?.includes('helipad') || f.helipad) tagsHtml += '<span class="tag">🚁 Heli</span>';
 
         const sceneDate = status.latestScene?.capturedAt ? status.latestScene.capturedAt.split('T')[0] : '—';
-        const changeStatus = status.latestChange?.classification || 'Normal';
-        const isPending = status.flags?.hasPendingReview;
+        const reviewStatus = status.latestChange?.reviewStatus || 'clear';
+        const statusBadge = reviewStatus === 'confirmed' ? '<span class="status-pill status-confirmed">✓ Confirmed</span>' : (reviewStatus === 'deferred' ? '<span class="status-pill status-deferred">⏳ Deferred</span>' : '<span class="status-pill status-dismissed">Normal</span>');
 
         tr.innerHTML = `
           <td><span class="priority-badge priority-${{f.priority}}">P${{f.priority}}</span></td>
@@ -465,8 +797,8 @@ def build_dashboard_html() -> str:
           <td style="text-transform: capitalize;">${{f.group}}</td>
           <td>${{f.country || f.claimant}}</td>
           <td>${{tagsHtml || '—'}}</td>
-          <td>${{sceneDate}} <span style="font-size: 0.75rem; color: var(--text-muted);">${{status.latestScene?.source || ''}}</span></td>
-          <td>${{isPending ? '<span class="status-pill status-pending">⚠️ Pending Review</span>' : '<span class="status-pill status-dismissed">Clear</span>'}}</td>
+          <td>${{sceneDate}}</td>
+          <td>${{statusBadge}}</td>
           <td>${{status.counts?.scenes || 0}}</td>
         `;
         tbody.appendChild(tr);
@@ -477,58 +809,24 @@ def build_dashboard_html() -> str:
       const deck = document.getElementById('triage-deck');
       deck.innerHTML = '';
 
-      if (DATA.reviewQueue.length === 0) {{
-        deck.innerHTML = '<div class="card" style="text-align: center; color: var(--text-muted);">✅ All candidate detections have been reviewed!</div>';
-        return;
-      }}
-
-      DATA.reviewQueue.forEach(item => {{
+      DATA.changes.forEach(item => {{
         const card = document.createElement('div');
-        card.className = 'triage-card';
-        const metrics = item.metrics || {{}};
+        card.style.cssText = 'background: #111827; border: 1px solid #1f293b; border-radius: 8px; padding: 16px; margin-bottom: 12px;';
+        const f = DATA.features.find(feat => feat.id === item.featureId) || {{ name: item.featureId, key: '' }};
+        const statusPill = item.reviewStatus === 'confirmed' ? '<span class="status-pill status-confirmed">✓ CONFIRMED</span>' : (item.reviewStatus === 'deferred' ? '<span class="status-pill status-deferred">⏳ DEFERRED</span>' : '<span class="status-pill status-dismissed">DISMISSED</span>');
 
         card.innerHTML = `
-          <div class="triage-header">
-            <div>
-              <div style="font-size: 1.1rem; font-weight: 700;">${{item.featureName}} <span class="priority-badge priority-${{item.priority}}">P${{item.priority}}</span></div>
-              <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
-                Claimant: <strong>${{item.claimant}}</strong> • Detected: ${{item.detectedAt ? item.detectedAt.split('T')[0] : 'Recent'}} • Source: <strong>${{item.beforeScene?.source || 'NISAR SAR'}}</strong>
-              </div>
-            </div>
-            <span class="status-pill status-pending" style="font-size: 0.85rem;">Classification: ${{item.classification}}</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-weight: 700; font-size: 1.05rem;">${{f.name}} <span class="priority-badge priority-${{f.priority || 2}}">P${{f.priority || 2}}</span></div>
+            ${{statusPill}}
           </div>
-
-          <div class="triage-metrics">
-            <div class="metric-item">
-              <div class="m-label">Confidence</div>
-              <div class="m-val" style="color: #34d399;">${{Math.round((item.confidence || 0.85) * 100)}}%</div>
-            </div>
-            ${{metrics.amplitudeChangePct ? `
-            <div class="metric-item">
-              <div class="m-label">Amplitude Δ</div>
-              <div class="m-val">${{metrics.amplitudeChangePct.toFixed(1)}}%</div>
-            </div>` : ''}}
-            ${{metrics.coherenceDecorrelatedPct ? `
-            <div class="metric-item">
-              <div class="m-label">Decorrelation</div>
-              <div class="m-val">${{metrics.coherenceDecorrelatedPct.toFixed(1)}}%</div>
-            </div>` : ''}}
-            ${{metrics.amplitudeMeanIncreaseDb ? `
-            <div class="metric-item">
-              <div class="m-label">Backscatter Inc.</div>
-              <div class="m-val">+${{metrics.amplitudeMeanIncreaseDb.toFixed(1)}} dB</div>
-            </div>` : ''}}
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
+            Change ID: <code style="color: #60a5fa;">${{item.id}}</code> • Detected: ${{item.detectedAt ? item.detectedAt.split('T')[0] : 'Recent'}}
           </div>
-
-          <div style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 12px; background: #0f172a; padding: 10px; border-radius: 6px;">
-            <strong>Scene Evidence:</strong> Before (${{item.beforeScene?.capturedAt || 'N/A'}}) vs After (${{item.afterScene?.capturedAt || 'N/A'}})
-          </div>
-
-          <div class="triage-actions">
-            <button class="btn btn-confirm" onclick="cliHint('${{item.changeId}}', 'confirm')">✓ Confirm Detection</button>
-            <button class="btn btn-dismiss" onclick="cliHint('${{item.changeId}}', 'dismiss')">✗ Dismiss False Positive</button>
-            <button class="btn btn-defer" onclick="cliHint('${{item.changeId}}', 'defer')">⏳ Defer for Optical</button>
-            <button class="btn btn-outline" onclick="viewFeature('${{item.featureKey}}')">Inspect Feature</button>
+          <div style="background: #0f172a; padding: 10px; border-radius: 6px; font-size: 0.85rem; display: flex; gap: 16px; flex-wrap: wrap;">
+            <div>Classification: <strong>${{item.classification}}</strong></div>
+            <div>Confidence: <strong>${{Math.round((item.confidence || 0.85) * 100)}}%</strong></div>
+            ${{item.metrics?.amplitudeChangePct ? `<div>Backscatter Δ: <strong>+${{item.metrics.amplitudeChangePct}}%</strong></div>` : ''}}
           </div>
         `;
         deck.appendChild(card);
@@ -542,29 +840,11 @@ def build_dashboard_html() -> str:
 
       for (const [key, s] of Object.entries(sources)) {{
         const card = document.createElement('div');
-        card.className = 'health-card';
-        const isReady = s.status === 'ready';
+        card.className = 'stat-card';
         card.innerHTML = `
-          <div class="health-header">
-            <h3 style="text-transform: uppercase; font-size: 0.95rem;">${{key.replace('_', ' ')}}</h3>
-            <span class="status-pill ${{isReady ? 'status-ready' : 'status-stale'}}">${{s.status}}</span>
-          </div>
-          <div class="health-row">
-            <span style="color: var(--text-muted);">Configured</span>
-            <span style="color: ${{s.configured ? '#34d399' : '#f87171'}};">${{s.configured ? '✓ Yes' : '✗ No'}}</span>
-          </div>
-          <div class="health-row">
-            <span style="color: var(--text-muted);">Secret Safe</span>
-            <span style="color: #34d399;">✓ Yes</span>
-          </div>
-          <div class="health-row">
-            <span style="color: var(--text-muted);">Total Scenes</span>
-            <span>${{s.sceneCount ?? s.totalObservations ?? '—'}}</span>
-          </div>
-          <div class="health-row">
-            <span style="color: var(--text-muted);">Latest Capture</span>
-            <span>${{s.latestSceneAt ? s.latestSceneAt.split('T')[0] : (s.latestObservationAt ? s.latestObservationAt.split('T')[0] : '—')}}</span>
-          </div>
+          <div class="label">${{key.replace('_', ' ')}}</div>
+          <div class="value" style="font-size: 1.3rem;">${{s.sceneCount ?? s.totalObservations ?? '—'}} Scenes</div>
+          <div class="subtext">Status: <span style="color: #34d399; font-weight:700;">${{s.status}}</span> • Secret Safe: ✓</div>
         `;
         grid.appendChild(card);
       }}
@@ -574,9 +854,8 @@ def build_dashboard_html() -> str:
       const feature = DATA.features.find(f => f.key === featureKey);
       if (!feature) return;
 
-      const featureScenes = DATA.scenes.filter(s => s.featureId === 'feature:' + featureKey);
-      const featureChanges = DATA.changes.filter(c => c.featureId === 'feature:' + featureKey);
-      const featureNotes = DATA.notes.filter(n => n.featureId === 'feature:' + featureKey);
+      const featureImages = DATA.imageCatalog[featureKey] || [];
+      const featureNotes = DATA.rawNotes.filter(n => n.feature === featureKey || n.relatedChangeId?.includes(featureKey));
 
       const modalBody = document.getElementById('modal-body');
       modalBody.innerHTML = `
@@ -587,31 +866,47 @@ def build_dashboard_html() -> str:
 
         <div style="background: #0f172a; padding: 14px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 16px;">
           <h4 style="font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Strategic Attributes</h4>
-          <div>
-            ${{feature.tags?.map(t => `<span class="tag">${{t}}</span>`).join('') || 'None listed'}}
-          </div>
+          <div>${{feature.tags?.map(t => `<span class="tag">${{t}}</span>`).join('') || 'None listed'}}</div>
         </div>
 
-        <h3 style="margin-top: 16px;">🛰️ Imagery History (${{featureScenes.length}} scenes)</h3>
-        <div style="max-height: 180px; overflow-y: auto; background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 16px;">
-          ${{featureScenes.slice(0, 10).map(s => `
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px solid #1e293b;">
-              <span>📅 ${{s.capturedAt ? s.capturedAt.split('T')[0] : 'Unknown'}} (${{s.source}})</span>
-              <span style="color: var(--text-muted);">${{s.resolutionMeters || 10}}m</span>
+        <h3>🖼️ Visual Evidence & Diff Maps (${{featureImages.length}} files)</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; max-height: 280px; overflow-y: auto; background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+          ${{featureImages.map(img => `
+            <div style="background: #111827; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b;">
+              <img src="${{img.path}}" alt="${{img.label}}" style="width:100%; height:120px; object-fit:cover; cursor:pointer;" onclick="openLightbox('${{img.path}}', '${{feature.name}} - ${{img.label}}')">
+              <div style="padding: 6px; font-size: 0.75rem; text-align: center;">${{img.label}}</div>
             </div>
-          `).join('') || '<div style="color: var(--text-muted); font-size: 0.85rem;">No historical scenes found.</div>'}}
+          `).join('') || '<div style="color: var(--text-muted); font-size: 0.85rem;">No visual images on disk.</div>'}}
         </div>
 
-        <h3>📝 Analyst Notes (${{featureNotes.length}})</h3>
-        <div style="background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 16px;">
+        <h3>📝 Analyst Decision History</h3>
+        <div style="background: #0f172a; padding: 10px; border-radius: 8px;">
           ${{featureNotes.map(n => `
-            <div style="font-size: 0.85rem; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #1e293b;">
-              <span style="color: #60a5fa;">[${{n.createdAt.split('T')[0]}}]</span> <strong>${{n.author}}</strong> (${{n.kind}}): ${{n.text}}
+            <div style="font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid #1e293b;">
+              <span style="color: #60a5fa;">[${{n.createdAt.split('T')[0]}}]</span> <strong>${{n.kind.toUpperCase()}}</strong>: ${{n.text}}
             </div>
-          `).join('') || '<div style="color: var(--text-muted); font-size: 0.85rem;">No analyst notes recorded yet.</div>'}}
+          `).join('') || '<div style="color: var(--text-muted); font-size: 0.85rem;">No analyst notes recorded.</div>'}}
         </div>
       `;
 
+      document.getElementById('feature-modal').classList.add('open');
+    }}
+
+    function openFeatureImages(featureKey) {{
+      switchScreen('gallery');
+      document.getElementById('gallery-search').value = featureKey;
+      renderImageGallery();
+    }}
+
+    function openLightbox(imageSrc, caption) {{
+      const modalBody = document.getElementById('modal-body');
+      modalBody.innerHTML = `
+        <h3 style="margin-bottom: 12px;">${{caption}}</h3>
+        <img src="${{imageSrc}}" class="lightbox-img" alt="${{caption}}">
+        <div style="margin-top: 14px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+          File location: <code style="color: #60a5fa;">${{imageSrc}}</code>
+        </div>
+      `;
       document.getElementById('feature-modal').classList.add('open');
     }}
 
@@ -621,13 +916,6 @@ def build_dashboard_html() -> str:
 
     function closeModalOnBg(e) {{
       if (e.target.id === 'feature-modal') closeModal();
-    }}
-
-    function cliHint(changeId, action) {{
-      const note = prompt('Enter reason or note to ' + action + ' ' + changeId + ':', 'Analyst ' + action + ' via web dashboard');
-      if (note !== null) {{
-        alert('To record this decision permanently in the repo, run in your terminal:\\n\\npython3 scripts/review_queue.py --' + action + ' "' + changeId + '" --note "' + note + '"');
-      }}
     }}
 
     window.onload = initDashboard;
