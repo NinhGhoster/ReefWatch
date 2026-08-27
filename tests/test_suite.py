@@ -150,17 +150,25 @@ class TestChangeDetectionAlgorithms(unittest.TestCase):
     def test_ssim_different_images(self):
         from change_detector import calculate_pixel_diff, calculate_ssim, classify_change
 
-        img1 = np.full((100, 100, 3), 50, dtype=np.uint8)
-        img2 = np.full((100, 100, 3), 200, dtype=np.uint8)
+        img1 = np.full((100, 100, 3), 40, dtype=np.uint8)
+        img2 = np.zeros((100, 100, 3), dtype=np.uint8)
+        img2[:, :, 0] = 160  # Red
+        img2[:, :, 1] = 120  # Green
+        img2[:, :, 2] = 70   # Blue (non-cloud terrestrial color)
 
         score = calculate_ssim(img1, img2)
-        self.assertLess(score, 0.5)
+        self.assertLess(score, 0.85)
 
         diff_pct = calculate_pixel_diff(img1, img2)
         self.assertGreater(diff_pct, 50.0)
 
-        types = classify_change(img1, img2, score, diff_pct, 300.0)
+        types = classify_change(img1, img2, score, diff_pct, 10.0)
         self.assertIn("major_change", types)
+
+        # Cloud interference test
+        cloud_img = np.full((100, 100, 3), 240, dtype=np.uint8)
+        cloud_types = classify_change(img1, cloud_img, score, diff_pct, 100.0)
+        self.assertIn("cloud_interference", cloud_types)
 
 
 class TestMVPSnapshotContract(unittest.TestCase):
@@ -245,6 +253,47 @@ class TestAnalystWorkflows(unittest.TestCase):
         out_path = generate_dashboard.build_dashboard_html()
         self.assertTrue(Path(out_path).exists())
         self.assertTrue(Path(out_path).stat().st_size > 5000)
+
+
+class TestCloudFilter(unittest.TestCase):
+    """Test optical cloud detection, masking, and interference assessment."""
+
+    def test_detect_cloud_mask_on_white_cloud(self):
+        from cloud_filter import calculate_cloud_cover, detect_cloud_mask
+
+        # High brightness white cloud image
+        cloud_img = np.full((100, 100, 3), 240, dtype=np.uint8)
+        mask = detect_cloud_mask(cloud_img)
+        self.assertTrue(np.all(mask))
+        self.assertEqual(calculate_cloud_cover(cloud_img), 100.0)
+
+    def test_detect_cloud_mask_on_clear_ocean(self):
+        from cloud_filter import calculate_cloud_cover, detect_cloud_mask
+
+        # Dark blue clear ocean
+        ocean_img = np.zeros((100, 100, 3), dtype=np.uint8)
+        ocean_img[:, :, 2] = 80  # Blue
+        ocean_img[:, :, 1] = 40  # Green
+        ocean_img[:, :, 0] = 10  # Red
+        mask = detect_cloud_mask(ocean_img)
+        self.assertFalse(np.any(mask))
+        self.assertEqual(calculate_cloud_cover(ocean_img), 0.0)
+
+    def test_assess_cloud_interference(self):
+        from cloud_filter import assess_cloud_interference
+
+        clear_img = np.full((100, 100, 3), 40, dtype=np.uint8)
+        cloud_img = np.full((100, 100, 3), 245, dtype=np.uint8)
+
+        # Clear vs Clear
+        res_clear = assess_cloud_interference(clear_img, clear_img)
+        self.assertFalse(res_clear["is_cloud_obscured"])
+        self.assertEqual(res_clear["recommendation"], "clear")
+
+        # Clear vs Cloud
+        res_cloudy = assess_cloud_interference(clear_img, cloud_img)
+        self.assertTrue(res_cloudy["is_cloud_obscured"])
+        self.assertEqual(res_cloudy["cloud_pct_image2"], 100.0)
 
 
 if __name__ == "__main__":

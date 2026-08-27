@@ -22,6 +22,11 @@ import numpy as np
 from PIL import Image
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+
+from cloud_filter import assess_cloud_interference, calculate_cloud_cover, detect_cloud_mask
+
 IMAGERY_DIR = os.path.join(SCRIPT_DIR, "..", "imagery_history")
 LOG_FILE = os.path.join(SCRIPT_DIR, "..", "sentinel2_changes.jsonl")
 OUTPUT_DIR = os.path.join(SCRIPT_DIR, "..", "imagery_history")
@@ -149,13 +154,19 @@ def compare_images(path1, path2, feature_key=None):
     gray1 = load_image_as_gray(path1, size=target_size)
     gray2 = load_image_as_gray(path2, size=target_size)
 
+    # Cloud evaluation
+    cloud_eval = assess_cloud_interference(rgb1, rgb2, max_allowed_cloud_pct=30.0)
+    is_cloud_obscured = cloud_eval["is_cloud_obscured"]
+
     # Compute metrics
     ssim_score = compute_ssim(gray1, gray2)
     pixel_diff = compute_pixel_change(gray1, gray2)
     ndvi_change = compute_ndvi_change(rgb1, rgb2)
 
-    # Classify change level
-    if ssim_score > 0.95:
+    # Classify change level taking clouds into account
+    if is_cloud_obscured:
+        change_level = "cloud_obscured"
+    elif ssim_score > 0.95:
         change_level = "minimal"
     elif ssim_score > 0.85:
         change_level = "low"
@@ -182,6 +193,10 @@ def compare_images(path1, path2, feature_key=None):
         "pixel_diff_pct": round(pixel_diff, 2),
         "ndvi_change": round(ndvi_change, 4),
         "change_level": change_level,
+        "cloud_pct_image1": cloud_eval["cloud_pct_image1"],
+        "cloud_pct_image2": cloud_eval["cloud_pct_image2"],
+        "cloud_obscured": is_cloud_obscured,
+        "cloud_status": cloud_eval["status_label"],
         "visualization": vis_path,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
@@ -189,6 +204,7 @@ def compare_images(path1, path2, feature_key=None):
     print(f"    SSIM: {ssim_score:.4f}")
     print(f"    Pixel diff: {pixel_diff:.2f}%")
     print(f"    NDVI change: {ndvi_change:.4f}")
+    print(f"    Cloud: {cloud_eval['cloud_pct_image1']}% vs {cloud_eval['cloud_pct_image2']}% ({cloud_eval['status_label']})")
     print(f"    Level: {change_level}")
     print(f"    Visualization: {vis_path}")
 

@@ -29,12 +29,18 @@ BASE_DIR = os.path.dirname(SCRIPT_DIR)
 IMAGERY_DIR = os.path.join(BASE_DIR, "imagery_history")
 CHANGELOG_FILE = os.path.join(BASE_DIR, "imagery_changes.jsonl")
 
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+
+from cloud_filter import assess_cloud_interference, calculate_cloud_cover, detect_cloud_mask
+
 # Thresholds
 SSIM_CHANGE_THRESHOLD = 0.92     # Below this = significant change
 PIXEL_DIFF_THRESHOLD = 3.0       # Above 3% = notable pixel diff
 BRIGHTNESS_CHANGE_THRESHOLD = 15 # >15% brightness shift = cloud/obstruction
 CONSTRUCTION_DARK_THRESHOLD = 80 # Mean pixel value shift indicating new structures
 VESSEL_SPOT_THRESHOLD = 5        # Small bright regions suggesting vessels
+CLOUD_MAX_COVER_THRESHOLD = 30.0 # >30% cloud cover = obscured scene
 
 
 def load_image(path):
@@ -98,16 +104,25 @@ def calculate_brightness_change(img1, img2):
     return round(change, 2)
 
 
-def classify_change(img1, img2, ssim_score, pixel_diff_pct, brightness_change):
+def classify_change(img1, img2, ssim_score, pixel_diff_pct, brightness_change, cloud_eval=None):
     """Classify the type of change detected.
 
     Returns list of change types detected.
     """
     changes = []
 
-    # Cloud interference: widespread brightness change with low structural change
-    if brightness_change > BRIGHTNESS_CHANGE_THRESHOLD and ssim_score > 0.85:
+    if cloud_eval is None:
+        cloud_eval = assess_cloud_interference(img1, img2, max_allowed_cloud_pct=CLOUD_MAX_COVER_THRESHOLD)
+
+    is_cloud_obscured = cloud_eval.get("is_cloud_obscured", False)
+
+    # Cloud interference: explicit cloud cover check or high brightness shift with intact structure
+    if is_cloud_obscured or (brightness_change > BRIGHTNESS_CHANGE_THRESHOLD and ssim_score > 0.85):
         changes.append("cloud_interference")
+
+    # If the scene is heavily cloud obscured, suppress false-positive construction / structural changes
+    if is_cloud_obscured:
+        return changes
 
     # Construction: dark-to-light transitions in specific areas
     if img1.ndim == 3:
@@ -153,7 +168,8 @@ def classify_change(img1, img2, ssim_score, pixel_diff_pct, brightness_change):
 def compare_images(path1, path2):
     """Full comparison of two satellite images.
 
-    Returns dict with all metrics and classification.
+    Returns dict with SSIM score, pixel difference, brightness change,
+    cloud diagnostics, and change classification.
     """
     if not os.path.isfile(path1):
         return {"error": f"Image not found: {path1}", "changed": None}
@@ -164,6 +180,9 @@ def compare_images(path1, path2):
         img1 = load_image(path1)
         img2 = load_image(path2)
         img1, img2 = resize_to_match(img1, img2)
+
+        # Cloud evaluation
+        cloud_eval = assess_cloud_interference(img1, img2, max_allowed_cloud_pct=CLOUD_MAX_COVER_THRESHOLD)
 
         ssim_score = calculate_ssim(img1, img2)
         pixel_diff_pct = calculate_pixel_diff(img1, img2)
@@ -190,11 +209,11 @@ def compare_images(path1, path2):
             elif ssim_score > 0.95:
                 confidence = 0.85
 
-        # Classify change types
-        change_types = classify_change(img1, img2, ssim_score, pixel_diff_pct, brightness_change)
+        # Classify change types with cloud filtering
+        change_types = classify_change(img1, img2, ssim_score, pixel_diff_pct, brightness_change, cloud_eval=cloud_eval)
 
         # Cloud detection as reason for false positive
-        is_cloud = "cloud_interference" in change_types
+        is_cloud = "cloud_interference" in change_types or cloud_eval["is_cloud_obscured"]
 
         return {
             "ssim_score": ssim_score,
@@ -205,6 +224,7 @@ def compare_images(path1, path2):
             "confidence": round(confidence, 2),
             "change_types": change_types,
             "cloud_interference": is_cloud,
+            "cloud_eval": cloud_eval,
             "image1": os.path.basename(path1),
             "image2": os.path.basename(path2),
         }

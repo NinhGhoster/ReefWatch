@@ -36,6 +36,11 @@ NISAR_CHANGES = BASE_DIR / "nisar_changes.jsonl"
 S2_LOG = BASE_DIR / "s2_correlation.jsonl"
 ANALYST_NOTES = BASE_DIR / "analyst_notes.jsonl"
 
+if str(BASE_DIR / "scripts") not in sys.path:
+    sys.path.insert(0, str(BASE_DIR / "scripts"))
+
+from cloud_filter import calculate_cloud_cover
+
 
 def load_json(path: Path) -> Any:
     if not path.exists():
@@ -59,9 +64,9 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def build_image_catalog() -> dict[str, list[dict[str, str]]]:
-    """Catalog all images in imagery_history/ grouped by feature."""
-    catalog: dict[str, list[dict[str, str]]] = {}
+def build_image_catalog() -> dict[str, list[dict[str, Any]]]:
+    """Catalog all images in imagery_history/ grouped by feature with cloud cover analysis."""
+    catalog: dict[str, list[dict[str, Any]]] = {}
     if not IMAGERY_DIR.exists():
         return catalog
 
@@ -71,12 +76,15 @@ def build_image_catalog() -> dict[str, list[dict[str, str]]]:
         if "_sentinel2_" in fname:
             feature_key = fname.split("_sentinel2_")[0]
             date_str = fname.split("_sentinel2_")[1].replace(".png", "")
+            cloud_pct = calculate_cloud_cover(str(p))
             catalog.setdefault(feature_key, []).append({
                 "type": "sentinel2",
                 "filename": fname,
                 "path": f"../imagery_history/{fname}",
                 "date": date_str,
                 "label": f"Optical {date_str}",
+                "cloudPct": cloud_pct,
+                "isCloudy": cloud_pct > 30.0,
             })
         elif "_diff_" in fname:
             feature_key = fname.split("_diff_")[0]
@@ -87,6 +95,8 @@ def build_image_catalog() -> dict[str, list[dict[str, str]]]:
                 "path": f"../imagery_history/{fname}",
                 "date": diff_part,
                 "label": f"Diff Heatmap ({diff_part})",
+                "cloudPct": None,
+                "isCloudy": False,
             })
 
     # Sort each feature's images chronologically
@@ -474,7 +484,7 @@ def build_dashboard_html() -> str:
     <!-- SCREEN 3: VISUAL IMAGERY & DIFF VIEWER -->
     <section id="screen-gallery" class="screen">
       <h1>Visual Imagery & Difference Heatmaps</h1>
-      <p class="subtitle">Direct photographic evidence and pixel delta heatmaps from 1,090 satellite scenes</p>
+      <p class="subtitle">Direct photographic evidence and pixel delta heatmaps from 1,090 satellite scenes with cloud filtering</p>
 
       <div class="filter-bar">
         <input type="text" id="gallery-search" class="search-input" placeholder="🔍 Filter images by feature name..." oninput="renderImageGallery()">
@@ -482,6 +492,12 @@ def build_dashboard_html() -> str:
           <option value="all">All Image Types (Diff Maps + Optical)</option>
           <option value="diff">Difference Heatmaps Only</option>
           <option value="sentinel2">Sentinel-2 Optical Passes Only</option>
+        </select>
+        <select id="gallery-cloud-filter" class="filter-select" onchange="renderImageGallery()">
+          <option value="all">☁️ All Cloud Levels</option>
+          <option value="clear">☀️ Clear Only (&lt; 20% Cloud)</option>
+          <option value="moderate">⛅ Low-to-Moderate (&lt; 35% Cloud)</option>
+          <option value="obscured">☁️ Cloud Obscured (&gt; 35% Cloud)</option>
         </select>
       </div>
 
@@ -731,6 +747,7 @@ def build_dashboard_html() -> str:
 
       const query = (document.getElementById('gallery-search').value || '').toLowerCase();
       const typeFilter = document.getElementById('gallery-type-filter').value;
+      const cloudFilter = document.getElementById('gallery-cloud-filter')?.value || 'all';
 
       let rendered = 0;
       for (const [featureKey, images] of Object.entries(DATA.imageCatalog)) {{
@@ -738,15 +755,37 @@ def build_dashboard_html() -> str:
 
         images.forEach(img => {{
           if (typeFilter !== 'all' && img.type !== typeFilter) return;
+
+          // Cloud filtering
+          if (img.type === 'sentinel2' && img.cloudPct !== null) {{
+            if (cloudFilter === 'clear' && img.cloudPct >= 20.0) return;
+            if (cloudFilter === 'moderate' && img.cloudPct >= 35.0) return;
+            if (cloudFilter === 'obscured' && img.cloudPct < 35.0) return;
+          }}
+
           if (rendered >= 48) return; // limit to 48 images for high performance
+
+          let cloudBadge = '';
+          if (img.cloudPct !== null && img.cloudPct !== undefined) {{
+            if (img.cloudPct < 20) {{
+              cloudBadge = `<span style="background: rgba(16,185,129,0.2); color:#34d399; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">☀️ ${{img.cloudPct}}% cloud</span>`;
+            }} else if (img.cloudPct < 35) {{
+              cloudBadge = `<span style="background: rgba(245,158,11,0.2); color:#fbbf24; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">⛅ ${{img.cloudPct}}% cloud</span>`;
+            }} else {{
+              cloudBadge = `<span style="background: rgba(239,68,68,0.2); color:#f87171; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight:700;">☁️ ${{img.cloudPct}}% (OBSCURED)</span>`;
+            }}
+          }}
 
           const card = document.createElement('div');
           card.className = 'image-card';
           card.innerHTML = `
             <img src="${{img.path}}" alt="${{img.label}}" class="image-preview" onclick="openLightbox('${{img.path}}', '${{featureKey}} - ${{img.label}}')">
             <div class="image-caption">
-              <div style="font-weight: 700; text-transform: capitalize;">${{featureKey.replace(/_/g, ' ')}}</div>
-              <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">${{img.label}}</div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: 700; text-transform: capitalize;">${{featureKey.replace(/_/g, ' ')}}</div>
+                ${{cloudBadge}}
+              </div>
+              <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">${{img.label}}</div>
             </div>
           `;
           grid.appendChild(card);
