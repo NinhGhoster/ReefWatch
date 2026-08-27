@@ -30,13 +30,13 @@ jobs:
             pip install numpy pillow scipy requests
           fi
 
-      - name: Run Test Suite
-        run: |
-          python3 -m unittest discover tests -v
-
       - name: Export MVP Snapshot
         run: |
           python3 scripts/export_mvp_snapshot.py
+
+      - name: Run Test Suite
+        run: |
+          python3 -m unittest discover tests -v
 
       - name: Validate MVP Snapshot & Secret Safety
         run: |

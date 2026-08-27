@@ -636,6 +636,7 @@ def build_dashboard_html() -> str:
 </html>
 """
 
+    DERIVED_DIR.mkdir(parents=True, exist_ok=True)
     with open(DASHBOARD_HTML, "w", encoding="utf-8") as f:
         f.write(html)
 

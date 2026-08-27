@@ -31,6 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = BASE_DIR / "scripts"
 DATA_DIR = BASE_DIR / "data"
 DERIVED_DIR = BASE_DIR / "derived"
+DERIVED_DIR.mkdir(parents=True, exist_ok=True)
 
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
