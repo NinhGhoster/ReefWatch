@@ -10,11 +10,19 @@ Standalone PyTorch implementation.
 import os
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
-import torch
-from torchvision.models.detection import FasterRCNN
-from torchvision.models.detection.rpn import AnchorGenerator
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-from torchvision import transforms
+try:
+    import torch
+    from torchvision.models.detection import FasterRCNN
+    from torchvision.models.detection.rpn import AnchorGenerator
+    from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
+    from torchvision import transforms
+except ImportError:
+    torch = None
+    FasterRCNN = None
+    AnchorGenerator = None
+    resnet_fpn_backbone = None
+    transforms = None
+
 
 import argparse
 import json
