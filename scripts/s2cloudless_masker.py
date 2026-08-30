@@ -22,8 +22,10 @@ try:
     from rasterio.windows import from_bounds
     from s2cloudless import S2PixelCloudDetector
 except ImportError:
-    print("Please install requirements: pip install s2cloudless lightgbm rasterio")
-    sys.exit(1)
+    rasterio = None
+    from_bounds = None
+    S2PixelCloudDetector = None
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGERY_DIR = os.path.join(SCRIPT_DIR, "..", "imagery_history")
