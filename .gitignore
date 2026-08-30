@@ -37,3 +37,5 @@ Thumbs.db
 .env
 *.key
 data/api_keys.json
+*.pth
+models/*.pth

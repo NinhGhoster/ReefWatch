@@ -52,6 +52,7 @@ AIRCRAFT_LOGS = [
 SHIP_LOGS = [
     BASE_DIR / "ships_log.jsonl",
 ]
+SHIP_DETECTIONS_LOG = BASE_DIR / "ship_detections.jsonl"
 
 PRIORITY_1_KEYS = {
     "woody_island",
@@ -444,6 +445,37 @@ def export_traffic(features_by_key: dict[str, dict[str, Any]]) -> list[dict[str,
             normalized = normalize_ship_row(raw, features_by_key)
             if normalized:
                 rows.append(normalized)
+                
+    # Process computer vision ship detections
+    for raw in load_jsonl(SHIP_DETECTIONS_LOG):
+        feature_key = raw.get("feature_key")
+        if feature_key not in features_by_key:
+            continue
+        captured_at = raw.get("timestamp") or now_iso()
+        for idx, det in enumerate(raw.get("detections", [])):
+            rows.append({
+                "id": make_observation_id("vessel", feature_key, captured_at, f"cv_{idx}"),
+                "featureId": f"feature:{feature_key}",
+                "domain": "vessel",
+                "source": "cv_model",
+                "capturedAt": captured_at,
+                "identity": {
+                    "mmsi": None,
+                    "name": det.get("class_name"),
+                    "imo": None,
+                },
+                "position": {
+                    "lat": det.get("estimated_lat"),
+                    "lon": det.get("estimated_lon"),
+                },
+                "metadata": {
+                    "confidence": det.get("confidence"),
+                    "category": det.get("category"),
+                    "bbox": det.get("bbox_xyxy"),
+                    "image_path": str(raw.get("image_path", ""))
+                }
+            })
+            
     rows.sort(key=lambda row: row.get("capturedAt", ""), reverse=True)
     write_jsonl(DERIVED_DIR / "traffic.jsonl", rows)
     return rows

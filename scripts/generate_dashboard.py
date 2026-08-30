@@ -205,56 +205,65 @@ def build_dashboard_html() -> str:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ReefWatch — South China Sea Monitoring & Evidence Intelligence</title>
-  <style>
+      <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+    
     :root {{
-      --bg: #0b0f19;
-      --card-bg: #111827;
-      --card-border: #1f2937;
-      --card-hover: #1e293b;
-      --text: #f3f4f6;
-      --text-muted: #9ca3af;
-      --primary: #3b82f6;
-      --accent: #06b6d4;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
+      --bg: #0F172A;
+      --card-bg: #1B2336;
+      --card-border: #334155;
+      --card-hover: #1E293B;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --primary: #3B82F6;
+      --accent: #22C55E;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --grid-gap: 16px;
+      --card-radius: 16px;
     }}
-    * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }}
+    
+    * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }}
     body {{ background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }}
     
     /* Layout */
-    header {{ background: #0f172a; border-bottom: 1px solid #1e293b; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }}
-    .logo {{ display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.2rem; color: #fff; }}
-    .logo-badge {{ background: linear-gradient(135deg, #2563eb, #06b6d4); color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px; }}
-    nav {{ display: flex; gap: 6px; flex-wrap: wrap; }}
-    .nav-btn {{ background: transparent; border: 1px solid transparent; color: var(--text-muted); padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 6px; }}
-    .nav-btn:hover {{ background: #1e293b; color: #fff; }}
-    .nav-btn.active {{ background: #1e293b; color: #60a5fa; border-color: #3b82f6; font-weight: 600; }}
-    .badge {{ background: var(--primary); color: white; border-radius: 9999px; padding: 1px 7px; font-size: 0.75rem; font-weight: 700; }}
+    header {{ background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }}
+    .logo {{ display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.3rem; color: #fff; letter-spacing: -0.02em; }}
+    .logo-badge {{ background: linear-gradient(135deg, #3B82F6, #22C55E); color: white; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 0 12px rgba(34,197,94,0.3); }}
+    nav {{ display: flex; gap: 8px; flex-wrap: wrap; }}
+    .nav-btn {{ background: transparent; border: 1px solid transparent; color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; }}
+    .nav-btn:hover {{ background: var(--card-hover); color: #fff; }}
+    .nav-btn.active {{ background: #1E293B; color: #3B82F6; border-color: #334155; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }}
+    .badge {{ background: var(--primary); color: white; border-radius: 9999px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; }}
     
-    main {{ flex: 1; padding: 24px; max-width: 1440px; margin: 0 auto; width: 100%; }}
-    .screen {{ display: none; }}
+    main {{ flex: 1; padding: 32px; max-width: 1600px; margin: 0 auto; width: 100%; }}
+    .screen {{ display: none; animation: fadeIn 0.3s ease; }}
     .screen.active {{ display: block; }}
     
-    /* Typography & Utilities */
-    h1 {{ font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }}
-    h2 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 16px; }}
-    h3 {{ font-size: 1.05rem; font-weight: 600; margin-bottom: 10px; }}
-    .subtitle {{ color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }}
+    @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(10px); }} to {{ opacity: 1; transform: translateY(0); }} }}
     
-    /* Stats Row */
-    .stats-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }}
-    .stat-card {{ background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: 10px; cursor: pointer; transition: all 0.15s; }}
-    .stat-card:hover {{ border-color: var(--primary); transform: translateY(-2px); }}
-    .stat-card .label {{ color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }}
-    .stat-card .value {{ font-size: 1.8rem; font-weight: 700; margin: 4px 0; color: #fff; }}
-    .stat-card .subtext {{ font-size: 0.8rem; color: var(--text-muted); }}
+    /* Typography & Utilities */
+    h1 {{ font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.02em; }}
+    h2 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 16px; color: #fff; }}
+    h3 {{ font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; }}
+    .subtitle {{ color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; font-weight: 400; }}
+    
+    /* Stats Row - Bento Grid Style */
+    .stats-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--grid-gap); margin-bottom: 32px; }}
+    @media (max-width: 1024px) {{ .stats-grid {{ grid-template-columns: repeat(2, 1fr); }} }}
+    @media (max-width: 600px) {{ .stats-grid {{ grid-template-columns: 1fr; }} }}
+    .stat-card {{ background: var(--card-bg); border: 1px solid var(--card-border); padding: 24px; border-radius: var(--card-radius); cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }}
+    .stat-card:hover {{ border-color: var(--primary); transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 24px rgba(0,0,0,0.15); }}
+    .stat-card .label {{ color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }}
+    .stat-card .value {{ font-size: 2.2rem; font-weight: 700; margin: 8px 0; color: #fff; font-family: 'Fira Code', monospace; letter-spacing: -1px; }}
+    .stat-card .subtext {{ font-size: 0.85rem; color: var(--text-muted); }}
     
     /* Cards & Containers */
-    .card {{ background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }}
-    .grid-2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
+    .card {{ background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--card-radius); padding: 24px; margin-bottom: var(--grid-gap); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }}
+    .grid-2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: var(--grid-gap); }}
     @media (max-width: 900px) {{ .grid-2 {{ grid-template-columns: 1fr; }} }}
-    
+
     /* Filters */
     .filter-bar {{ display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; background: #0f172a; padding: 12px 16px; border-radius: 8px; border: 1px solid #1e293b; }}
     .search-input {{ background: #1e293b; border: 1px solid #334155; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; min-width: 240px; outline: none; }}
@@ -263,54 +272,25 @@ def build_dashboard_html() -> str:
     .filter-chip {{ background: #1e293b; border: 1px solid #334155; color: var(--text-muted); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; transition: all 0.15s; }}
     .filter-chip.active {{ background: #2563eb; color: #fff; border-color: #3b82f6; }}
     
-    /* Tables */
-    .table-container {{ overflow-x: auto; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; margin-bottom: 20px; }}
-    table {{ width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }}
-    th {{ background: #172033; padding: 12px 16px; font-weight: 600; color: #cbd5e1; border-bottom: 1px solid var(--card-border); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }}
-    td {{ padding: 12px 16px; border-bottom: 1px solid #1e293b; color: #e2e8f0; vertical-align: middle; }}
-    tr:hover td {{ background: var(--card-hover); }}
-    
-    /* Badges & Tags */
-    .priority-badge {{ padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; display: inline-block; }}
-    .priority-1 {{ background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }}
-    .priority-2 {{ background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }}
-    .priority-3 {{ background: rgba(107, 114, 128, 0.2); color: #9ca3af; border: 1px solid rgba(107, 114, 128, 0.4); }}
-    
-    .tag {{ background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; }}
-    .tag-airport {{ background: rgba(59, 130, 246, 0.2); color: #93c5fd; border-color: rgba(59, 130, 246, 0.4); }}
-    .tag-sam {{ background: rgba(239, 68, 68, 0.2); color: #fca5a5; border-color: rgba(239, 68, 68, 0.4); }}
-    .tag-radar {{ background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border-color: rgba(168, 85, 247, 0.4); }}
-    .tag-port {{ background: rgba(6, 182, 212, 0.2); color: #67e8f9; border-color: rgba(6, 182, 212, 0.4); }}
-    
-    .status-pill {{ display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; padding: 3px 8px; border-radius: 6px; }}
-    .status-confirmed {{ background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }}
-    .status-deferred {{ background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }}
-    .status-dismissed {{ background: rgba(107, 114, 128, 0.2); color: #9ca3af; border: 1px solid rgba(107, 114, 128, 0.4); }}
-    .status-pending {{ background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }}
-    
-    /* Sub Tabs inside Evidence View */
-    .sub-tabs {{ display: flex; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }}
-    .sub-tab-btn {{ background: #1e293b; border: 1px solid #334155; color: #cbd5e1; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }}
-    .sub-tab-btn.active {{ background: #2563eb; color: #fff; border-color: #3b82f6; }}
-    
-    /* Visual Comparison Cards */
-    .gallery-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }}
-    .image-card {{ background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; transition: all 0.15s; }}
-    .image-card:hover {{ border-color: #3b82f6; }}
-    .image-preview {{ width: 100%; height: 200px; object-fit: cover; background: #111827; cursor: pointer; display: block; }}
-    .image-caption {{ padding: 12px; font-size: 0.85rem; }}
-    
-    /* Metric pill */
-    .metric-chip {{ background: #1e293b; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; color: #60a5fa; }}
-    
-    /* Modal */
-    .modal-overlay {{ display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 20px; }}
+        /* Tables */
+    .table-container {{ overflow-x: auto; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; }}
+    table {{ width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; }}
+    th {{ background: #0F172A; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 14px 16px; border-bottom: 1px solid var(--card-border); position: sticky; top: 0; }}
+    td {{ padding: 14px 16px; border-bottom: 1px solid #1E293B; font-size: 0.9rem; font-weight: 500; }}
+    td[style*="monospace"] {{ font-family: 'Fira Code', monospace !important; font-size: 0.85rem !important; }}
+    tr:last-child td {{ border-bottom: none; }}
+    tr {{ transition: background 0.15s ease; }}
+    tbody tr:hover {{ background: #1E293B; }}
+    .status-badge {{ display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; }}
+
+    /* Modal & Lightbox */
+    .modal-overlay {{ display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.85); z-index: 100; backdrop-filter: blur(8px); justify-content: center; align-items: center; padding: 24px; animation: fadeIn 0.2s ease; }}
     .modal-overlay.open {{ display: flex; }}
-    .modal-content {{ background: var(--card-bg); border: 1px solid #334155; border-radius: 12px; width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; padding: 24px; position: relative; }}
-    .modal-close {{ position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; }}
+    .modal-content {{ background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; padding: 32px; position: relative; box-shadow: 0 24px 48px rgba(0,0,0,0.3); }}
+    .modal-close {{ position: absolute; top: 16px; right: 24px; background: transparent; border: none; color: var(--text-muted); font-size: 2rem; cursor: pointer; transition: color 0.15s; line-height: 1; }}
+    .modal-close:hover {{ color: #fff; }}
     
-    /* Lightbox for full images */
-    .lightbox-img {{ max-width: 100%; max-height: 70vh; object-fit: contain; margin: 0 auto; display: block; border-radius: 8px; }}
+    .lightbox-img {{ max-width: 100%; max-height: 70vh; object-fit: contain; margin: 0 auto; display: block; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); }}
   </style>
 </head>
 <body>
@@ -324,13 +304,38 @@ def build_dashboard_html() -> str:
       <button class="nav-btn active" onclick="switchScreen('overview')">📊 Overview</button>
       <button class="nav-btn" onclick="switchScreen('evidence')">🔬 Evidence & Proof Data <span class="badge" id="nav-evidence-badge">39</span></button>
       <button class="nav-btn" onclick="switchScreen('gallery')">🖼️ Imagery & Diff Maps <span class="badge" style="background:#059669;" id="nav-images-badge">1090</span></button>
-      <button class="nav-btn" onclick="switchScreen('features')">🏝️ Features (77)</button>
+            <button class="nav-btn" onclick="switchScreen('features')">🏝️ Features (77)</button>
+      <button class="nav-btn" onclick="switchScreen('ships')">🚢 Ship Detections (CV) <span class="badge" id="nav-ships-badge" style="background:#8b5cf6;">0</span></button>
       <button class="nav-btn" onclick="switchScreen('queue')">⚡ Triage Log</button>
       <button class="nav-btn" onclick="switchScreen('health')">🛰️ Source Health</button>
     </nav>
   </header>
 
   <main>
+        <!-- SCREEN SHIPS -->
+    <section id="screen-ships" class="screen">
+      <div class="card">
+        <h2 style="margin-top: 0;">🚢 Computer Vision Ship Detections</h2>
+        <p class="text-muted">Inferences powered by ShipRSImageNet Cascade Mask R-CNN across Sentinel-2 and Planet imagery.</p>
+        <div class="table-container" style="margin-top: 16px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Date / Time (UTC)</th>
+                <th>Feature</th>
+                <th>Vessel Class</th>
+                <th>Confidence</th>
+                <th>Bounding Box (xyxy)</th>
+                <th>Evidence</th>
+              </tr>
+            </thead>
+            <tbody id="ships-table-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- SCREEN 1: OVERVIEW -->
     <section id="screen-overview" class="screen active">
       <h1>Intelligence Overview & Daily Brief</h1>
@@ -642,6 +647,7 @@ def build_dashboard_html() -> str:
       renderOpticalTable();
       renderSarTable();
       renderValidationTable();
+      renderShipsTable(); // Added this call
       renderNotesTable();
       renderImageGallery();
       renderFeaturesTable();
