@@ -22,9 +22,9 @@ from PIL import Image
 
 # Standard thresholds
 DEFAULT_CLOUD_MAX_PCT = 30.0
-CLOUD_MIN_INTENSITY = 170
-CLOUD_MEAN_INTENSITY = 180
-CLOUD_MAX_COLOR_DELTA = 40  # Low chroma/saturation = white/gray cloud
+CLOUD_MIN_INTENSITY = 130
+CLOUD_MEAN_INTENSITY = 140
+CLOUD_MAX_COLOR_DELTA = 60  # Low chroma/saturation = white/gray cloud
 
 
 def load_rgb(image_input: str | Path | np.ndarray | Image.Image) -> np.ndarray:
@@ -103,8 +103,24 @@ def segment_reef_land_mask(rgb: np.ndarray) -> np.ndarray:
     return ~is_deep_ocean
 
 
-def calculate_cloud_cover(rgb: np.ndarray) -> float:
+def calculate_cloud_cover(image_input: str | Path | np.ndarray) -> float:
     """Calculate the cloud cover percentage of an optical image (0.0 to 100.0%)."""
+    import os
+    from PIL import Image
+    
+    # Check if a high-accuracy s2cloudless mask exists for this file
+    if isinstance(image_input, (str, Path)):
+        path_str = str(image_input)
+        if "_sentinel2_" in path_str:
+            s2cloudless_path = path_str.replace("_sentinel2_", "_s2cloudless_")
+            if os.path.exists(s2cloudless_path):
+                # Use the s2cloudless mask directly
+                mask_img = np.array(Image.open(s2cloudless_path))
+                # It's a 0-255 image where >127 is cloud
+                cloud_pct = float(np.sum(mask_img > 127) / mask_img.size * 100.0)
+                return round(cloud_pct, 2)
+                
+    rgb = load_rgb(image_input)
     mask = detect_cloud_mask(rgb)
     if mask.size == 0:
         return 0.0

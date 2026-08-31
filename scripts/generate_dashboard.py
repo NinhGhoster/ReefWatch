@@ -178,6 +178,11 @@ def build_dashboard_html() -> str:
     raw_notes = load_jsonl(ANALYST_NOTES)
     image_catalog = build_image_catalog()
 
+    feature_options = ['<option value="">🔍 All Features</option>']
+    for f in sorted(image_catalog.keys()):
+        feature_options.append(f'<option value="{f.lower()}">{f.replace("_", " ").title()}</option>')
+    feature_options_html = "\n          ".join(feature_options)
+
     # Embed data as JSON payload
     data_payload = {
         "overview": overview,
@@ -490,7 +495,9 @@ def build_dashboard_html() -> str:
     <section id="screen-gallery" class="screen">
       <h1>Visual Imagery & Difference Heatmaps</h1>
       <div class="filter-bar">
-        <input type="text" id="gallery-search" class="search-input" placeholder="🔍 Filter images by feature name..." oninput="renderImageGallery()">
+        <select id="gallery-search" class="search-input filter-select" onchange="renderImageGallery()">
+          {feature_options_html}
+        </select>
         <select id="gallery-type-filter" class="filter-select" onchange="renderImageGallery()">
           <option value="all">All Image Types (Diff Maps + Optical)</option>
           <option value="diff">Difference Heatmaps Only</option>
