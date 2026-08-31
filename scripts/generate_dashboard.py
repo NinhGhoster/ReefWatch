@@ -545,7 +545,9 @@ def build_dashboard_html() -> str:
       <p class="subtitle">Canonical registry of 77 reefs, islands, cays, and platforms</p>
 
       <div class="filter-bar">
-        <input type="text" id="feature-search" class="search-input" placeholder="🔍 Search features by name or country..." oninput="renderFeaturesTable()">
+        <select id="feature-search" class="search-input filter-select" onchange="renderFeaturesTable()">
+          {feature_options_html}
+        </select>
         <select id="group-filter" class="filter-select" onchange="renderFeaturesTable()">
           <option value="all">All Groups (77)</option>
           <option value="spratly">Spratly Islands</option>
