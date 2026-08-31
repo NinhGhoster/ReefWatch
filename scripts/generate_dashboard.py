@@ -779,20 +779,29 @@ def build_dashboard_html() -> str:
       const cloudFilter = document.getElementById('gallery-cloud-filter')?.value || 'all';
 
       let rendered = 0;
+      let limitHit = false;
       for (const [featureKey, images] of Object.entries(DATA.imageCatalog)) {{
+        if (limitHit) break;
         if (query && !featureKey.toLowerCase().includes(query)) continue;
 
-        images.forEach(img => {{
-          if (typeFilter !== 'all' && img.type !== typeFilter) return;
+        for (const img of images) {{
+          if (typeFilter !== 'all' && img.type !== typeFilter) continue;
 
           // Cloud filtering
           if (img.type === 'sentinel2' && img.cloudPct !== null) {{
-            if (cloudFilter === 'clear' && img.cloudPct >= 20.0) return;
-            if (cloudFilter === 'moderate' && img.cloudPct >= 35.0) return;
-            if (cloudFilter === 'obscured' && img.cloudPct < 35.0) return;
+            if (cloudFilter === 'clear' && img.cloudPct >= 20.0) continue;
+            if (cloudFilter === 'moderate' && img.cloudPct >= 35.0) continue;
+            if (cloudFilter === 'obscured' && img.cloudPct < 35.0) continue;
           }}
 
-          if (rendered >= 48) return; // limit to 48 images for high performance
+          if (rendered >= 200) {{
+            const warning = document.createElement('div');
+            warning.style = "grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--warning); background: rgba(245, 158, 11, 0.1); border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 500; margin-top: 10px;";
+            warning.innerHTML = "⚠️ Displaying the first 200 images to maintain performance. <strong>Please use the search bar above</strong> to filter and view imagery for specific features (e.g., 'woody island').";
+            grid.appendChild(warning);
+            limitHit = true;
+            break;
+          }}
 
           let cloudBadge = '';
           if (img.cloudPct !== null && img.cloudPct !== undefined) {{
@@ -808,7 +817,7 @@ def build_dashboard_html() -> str:
           const card = document.createElement('div');
           card.className = 'image-card';
           card.innerHTML = `
-            <img src="${{img.path}}" alt="${{img.label}}" class="image-preview" onclick="openLightbox('${{img.path}}', '${{featureKey}} - ${{img.label}}')">
+            <img src="${{img.path}}" alt="${{img.label}}" loading="lazy" class="image-preview" onclick="openLightbox('${{img.path}}', '${{featureKey}} - ${{img.label}}')">
             <div class="image-caption">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="font-weight: 700; text-transform: capitalize;">${{featureKey.replace(/_/g, ' ')}}</div>
@@ -819,7 +828,7 @@ def build_dashboard_html() -> str:
           `;
           grid.appendChild(card);
           rendered++;
-        }});
+        }}
       }}
     }}
 
