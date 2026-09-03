@@ -55,6 +55,11 @@ jobs:
           echo "machine urs.earthdata.nasa.gov login ${{ secrets.EARTHDATA_USERNAME }} password ${{ secrets.EARTHDATA_PASSWORD }}" > ~/.netrc
           chmod 600 ~/.netrc
 
+
+      - name: Cleanup old data
+        run: |
+          python3 scripts/cleanup_storage.py
+
       - name: Fetch NISAR data
         run: |
           python3 scripts/nisar_fetch.py \
