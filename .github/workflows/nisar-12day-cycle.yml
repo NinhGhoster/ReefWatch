@@ -93,7 +93,7 @@ jobs:
         if: always()
         with:
           name: nisar-imagery-${{ github.run_id }}
-          path: imagery_history/
+          path: /data/gpfs/projects/punim1990/haninhn/ReefWatch/imagery_history/
           retention-days: 30
 
   # ============================================================
@@ -139,8 +139,8 @@ jobs:
         with:
           name: nisar-gcov-changes-${{ github.run_id }}
           path: |
-            nisar_changes.jsonl
-            derived/
+            /data/gpfs/projects/punim1990/haninhn/ReefWatch/nisar_changes.jsonl
+            /data/gpfs/projects/punim1990/haninhn/ReefWatch/derived/
           retention-days: 30
 
   # ============================================================
@@ -195,8 +195,8 @@ jobs:
         with:
           name: nisar-gslc-coherence-${{ github.run_id }}
           path: |
-            nisar_changes.jsonl
-            derived/
+            /data/gpfs/projects/punim1990/haninhn/ReefWatch/nisar_changes.jsonl
+            /data/gpfs/projects/punim1990/haninhn/ReefWatch/derived/
           retention-days: 30
 
   # ============================================================

@@ -88,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: derived-snapshot
-          path: derived/
+          path: /data/gpfs/projects/punim1990/haninhn/ReefWatch/derived/
           retention-days: 30
 
       - name: Upload imagery artifacts (sample)
@@ -97,8 +97,8 @@ jobs:
         with:
           name: imagery-sample
           path: |
-            imagery_history/*_latest.h5
-            imagery_history/*_latest.png
+            /data/gpfs/projects/punim1990/haninhn/ReefWatch/imagery_history/*_latest.h5
+            /data/gpfs/projects/punim1990/haninhn/ReefWatch/imagery_history/*_latest.png
           retention-days: 7
 
       - name: Summary
