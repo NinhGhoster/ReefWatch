@@ -919,6 +919,38 @@ def build_dashboard_html() -> str:
       }});
     }}
 
+    function renderShipsTable() {{
+      const tbody = document.getElementById('ships-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const trafficData = DATA.traffic || [];
+      if (trafficData.length === 0) {{
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">No computer vision ship detections found.</td></tr>';
+      }} else {{
+        trafficData.forEach(t => {{
+          const tr = document.createElement('tr');
+          const dateStr = t.timestamp ? t.timestamp.replace('T', ' ').replace('Z', '') : (t.detectedAt ? t.detectedAt.replace('T', ' ').replace('Z', '') : '—');
+          const featureStr = t.featureKey ? t.featureKey : (t.featureId ? t.featureId : '');
+          
+          tr.innerHTML = `
+            <td>${{dateStr}}</td>
+            <td style="font-weight: 600; text-transform: capitalize;">${{featureStr.replace(/_/g, ' ')}}</td>
+            <td><span class="status-pill status-dismissed" style="color:#a78bfa; border-color:#8b5cf6;">${{t.classification || t.type || 'ship'}}</span></td>
+            <td>${{Math.round((t.confidence || 0.9) * 100)}}%</td>
+            <td style="font-family: monospace; color: #94a3b8; font-size: 0.85em;">${{t.bbox ? JSON.stringify(t.bbox) : '—'}}</td>
+            <td><a href="#" onclick="viewFeature('${{featureStr}}'); return false;" style="color:#3b82f6;">View Context</a></td>
+          `;
+          tbody.appendChild(tr);
+        }});
+      }}
+
+      const badge = document.getElementById('nav-ships-badge');
+      if (badge) {{
+        badge.innerText = trafficData.length;
+      }}
+    }}
+
     function renderHealthGrid() {{
       const grid = document.getElementById('health-grid');
       grid.innerHTML = '';
